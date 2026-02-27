@@ -233,6 +233,53 @@ export default function CashierPage() {
 
           <LiveClock />
 
+          {/* Analytics link */}
+          <a
+            href="/analytics"
+            style={{
+              padding: "7px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(201,168,76,0.35)",
+              background: "rgba(201,168,76,0.08)",
+              color: "#C9A84C",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              transition: "background 0.2s",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.18)")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+          >
+            📊 Analytics
+          </a>
+
+          {/* Menu Manager link */}
+          <a
+            href="/menu-admin"
+            style={{
+              padding: "7px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(201,168,76,0.35)",
+              background: "rgba(201,168,76,0.08)",
+              color: "#C9A84C",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              transition: "background 0.2s",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.18)")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+          >
+            🍽️ Menu
+          </a>
+
+
           {/* Alert icon */}
           <button
             className={`relative text-xl transition-transform ${newAlert ? "animate-bounce" : ""}`}
