@@ -1,13 +1,16 @@
 # Lumière Café — Ordering System
 
-A real-time café ordering system with 3 screens synced via Firebase.
+A real-time café ordering system with 5 screens synced via Firebase Realtime Database.
 
-## Screens
+## 🔗 Live URLs
+
 | Screen | URL | Access |
 |---|---|---|
-| Customer Menu | `/` | Open |
-| Cashier Dashboard | `/cashier` | PIN: 1234 |
-| Kitchen Display | `/kitchen` | PIN: 5678 |
+| 🍽️ Customer Menu | [/](https://3d-cafe-menu.vercel.app/) | Open — enter table number |
+| 🧾 Cashier Dashboard | [/cashier](https://3d-cafe-menu.vercel.app/cashier) | PIN: `1234` |
+| 👨‍🍳 Kitchen Display | [/kitchen](https://3d-cafe-menu.vercel.app/kitchen) | PIN: `5678` |
+| 📊 Analytics | [/analytics](https://3d-cafe-menu.vercel.app/analytics) | PIN: `9999` |
+| 🍽️ Menu Manager | [/menu-admin](https://3d-cafe-menu.vercel.app/menu-admin) | PIN: `0000` |
 
 ## Setup
 
@@ -27,6 +30,8 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 NEXT_PUBLIC_CASHIER_PIN=1234
 NEXT_PUBLIC_KITCHEN_PIN=5678
+NEXT_PUBLIC_ANALYTICS_PIN=9999
+NEXT_PUBLIC_ADMIN_PIN=0000
 ```
 
 ### 3. Firebase Realtime Database Rules
@@ -34,10 +39,8 @@ In Firebase Console → **Realtime Database → Rules**, paste:
 ```json
 {
   "rules": {
-    "orders": {
-      ".read": true,
-      ".write": true
-    }
+    "orders": { ".read": true, ".write": true },
+    "menu":   { ".read": true, ".write": true }
   }
 }
 ```
@@ -48,7 +51,7 @@ npm run dev
 ```
 
 ### 5. Deploy
-Push to GitHub → connect to Vercel → add env variables in Vercel dashboard → deploy.
+Push to GitHub → connect to Vercel → add all env variables in Vercel dashboard → deploy.
 
 ## Tech Stack
 Next.js 14 · Firebase Realtime DB · Tailwind CSS · Vercel
