@@ -16,10 +16,7 @@ const KEYFRAMES = `
 }
 @keyframes badgePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
 @keyframes cartBump   { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
-@keyframes shimmer    {
-  0%   { background-position: -200% 0; transform: translateX(-150%) skewX(-20deg); }
-  100% { background-position:  200% 0; transform: translateX(250%)  skewX(-20deg); }
-}
+@keyframes shimmer    { 0%{transform:translateX(-150%) skewX(-20deg)} 100%{transform:translateX(250%) skewX(-20deg)} }
 @keyframes dropIn     { 0%{opacity:0;transform:scale(.7) translateY(-40px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
 @keyframes skelPulse  { 0%,100%{opacity:.5} 50%{opacity:1} }
 `;
@@ -46,128 +43,24 @@ const IMG_H = { transform:"scale(1.18) translateY(-5px)",filter:"drop-shadow(0px
 const IMG_R = { transform:"",filter:"drop-shadow(0px 10px 18px rgba(44,24,16,0.22))" };
 
 function MenuCard({ item, inCart, onAdd }) {
-  const hasImg   = !!(item.imageUrl?.trim());
-  const catBg    = CATEGORY_COLORS[item.category] || "#E8D5A3";
-  const [imgLoaded, setImgLoaded]   = useState(false);
-  const [isHovered, setIsHovered]   = useState(false);
-
-  const imgStyle = {
-    width: "88%",
-    height: "88%",
-    objectFit: "contain",
-    mixBlendMode: "multiply",
-    position: "relative",
-    zIndex: 2,
-    opacity: imgLoaded ? 1 : 0,
-    transform: isHovered
-      ? "translateY(-4px) scale(1.08)"
-      : imgLoaded ? "translateY(0) scale(1)" : "translateY(6px) scale(0.96)",
-    filter: isHovered
-      ? "drop-shadow(0 20px 40px rgba(44,24,16,0.28))"
-      : "drop-shadow(0 12px 28px rgba(44,24,16,0.18))",
-    transition: "opacity 0.4s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1), filter 0.35s ease",
-  };
-
-  const shadowStyle = {
-    position: "absolute",
-    bottom: 10,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: isHovered ? "65%" : "55%",
-    height: 12,
-    background: "rgba(44,24,16,0.12)",
-    borderRadius: "50%",
-    filter: isHovered ? "blur(12px)" : "blur(8px)",
-    opacity: isHovered ? 0.18 : 1,
-    zIndex: 1,
-    transition: "all 0.4s ease",
-    pointerEvents: "none",
-  };
-
+  const hasImg = !!(item.imageUrl?.trim());
+  const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
   return (
-    <div
-      className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* card shimmer sweep */}
+    <div className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative">
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]" />
-
-      {/* ── IMAGE AREA ── */}
-      <div
-        className="relative z-10 overflow-hidden"
-        style={{
-          height: "clamp(140px,25vw,180px)",
-          backgroundColor: catBg,
-          backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.25) 0%, transparent 70%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
+      <div className="relative z-10 overflow-hidden" style={{ height:"clamp(140px,25vw,180px)",backgroundColor:catBg,display:"flex",alignItems:"center",justifyContent:"center" }}>
         {hasImg ? (
-          <>
-            {/* shimmer skeleton while loading */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 3,
-              opacity: imgLoaded ? 0 : 1,
-              transition: "opacity 0.3s ease",
-              background: "linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%)",
-              backgroundSize: "200% 100%",
-              animation: "shimmer 1.5s infinite",
-              pointerEvents: "none",
-            }} />
-
-            {/* ground shadow */}
-            <div style={shadowStyle} />
-
-            {/* the image */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              style={imgStyle}
-              onLoad={() => setImgLoaded(true)}
-            />
-
-            {/* vignette frame */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 3,
-              boxShadow: "inset 0 0 30px rgba(44,24,16,0.06)",
-              pointerEvents: "none",
-            }} />
-
-            {/* bottom fade into card body */}
-            <div style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 48,
-              background: "linear-gradient(to top, #FDFAF5, transparent)",
-              zIndex: 4,
-              pointerEvents: "none",
-            }} />
-          </>
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={item.imageUrl} alt={item.name} style={IMG_S}
+            onMouseEnter={e=>Object.assign(e.currentTarget.style,IMG_H)}
+            onMouseLeave={e=>Object.assign(e.currentTarget.style,IMG_R)} />
         ) : (
-          <span className="text-[4.5rem] sm:text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">
-            {item.emoji}
-          </span>
+          <span className="text-[4.5rem] sm:text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">{item.emoji}</span>
         )}
-
         {item.special && (
-          <span className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-rose-500 text-white text-[0.6rem] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
-            Chef&apos;s Pick
-          </span>
+          <span className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-rose-500 text-white text-[0.6rem] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-lg z-10">Chef&apos;s Pick</span>
         )}
       </div>
-
-      {/* ── CARD BODY ── */}
       <div className="p-4 sm:p-6 pb-6 sm:pb-8 relative z-10 bg-[#FDFAF5]">
         <p className="text-[#C9A84C] text-[0.7rem] font-bold uppercase tracking-widest mb-1.5">{item.tag}</p>
         <h3 className="text-[1.3rem] sm:text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-1.5 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">{item.name}</h3>
@@ -176,11 +69,9 @@ function MenuCard({ item, inCart, onAdd }) {
           <span className="text-[1.5rem] sm:text-[1.8rem] font-bold font-[family-name:var(--font-cormorant)]">₹{item.price}</span>
           <div className="relative">
             {inCart && <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] rounded-full z-20 ring-2 ring-[#FDFAF5] bg-[#8A9E8A]" />}
-            <button
-              onClick={() => onAdd(item)}
+            <button onClick={()=>onAdd(item)}
               className="w-[42px] h-[42px] rounded-full bg-[#F7F2EA] flex items-center justify-center text-xl text-[#2C1810] shadow-sm group-hover:rotate-90 group-hover:bg-[#C9A84C] group-hover:text-white transition-all duration-300 border border-[#7A6E65]/10"
-              aria-label={`Add ${item.name}`}
-            >+</button>
+              aria-label={`Add ${item.name}`}>+</button>
           </div>
         </div>
       </div>
