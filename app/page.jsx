@@ -5,146 +5,73 @@ import { menuItems as DEFAULT_ITEMS, CATEGORY_COLORS } from "@/lib/menuItems";
 import { db } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
 
-/* ─── keyframe styles ──────────────────────────────────────────────────────── */
 const KEYFRAMES = `
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.88); }
+  from { opacity: 0; transform: translateY(16px) scale(0.9); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes cartGlow {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(201,168,76,0.4),
-                0 0 20px rgba(201,168,76,0.2),
-                0 4px 15px rgba(44,24,16,0.3);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(201,168,76,0.8),
-                0 0 40px rgba(201,168,76,0.4),
-                0 4px 20px rgba(44,24,16,0.4);
-  }
+  0%,100% { box-shadow:0 0 8px rgba(201,168,76,.4),0 0 20px rgba(201,168,76,.2),0 4px 15px rgba(44,24,16,.3); }
+  50%      { box-shadow:0 0 16px rgba(201,168,76,.8),0 0 40px rgba(201,168,76,.4),0 4px 20px rgba(44,24,16,.4); }
 }
-@keyframes badgePulse {
-  0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.15); }
-}
-@keyframes cartBump {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-@keyframes shimmer {
-  0%   { transform: translateX(-150%) skewX(-20deg); }
-  100% { transform: translateX(250%) skewX(-20deg); }
-}
-@keyframes dropIn {
-  0%   { opacity: 0; transform: scale(0.7) translateY(-40px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-@keyframes skeletonPulse {
-  0%, 100% { opacity: 0.5; }
-  50%       { opacity: 1; }
-}
+@keyframes badgePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+@keyframes cartBump   { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+@keyframes shimmer    { 0%{transform:translateX(-150%) skewX(-20deg)} 100%{transform:translateX(250%) skewX(-20deg)} }
+@keyframes dropIn     { 0%{opacity:0;transform:scale(.7) translateY(-40px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes skelPulse  { 0%,100%{opacity:.5} 50%{opacity:1} }
 `;
 
-/* ─── Loading Skeleton card ────────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div style={{
-      background: "#FDFAF5", borderRadius: 32, overflow: "hidden",
-      boxShadow: "0 2px 8px rgba(44,24,16,0.06)", animation: "skeletonPulse 1.4s ease-in-out infinite",
-    }}>
-      <div style={{ height: 180, background: "#EDE8E0" }} />
-      <div style={{ padding: "24px 24px 32px" }}>
-        <div style={{ height: 10, width: "40%", background: "#EDE8E0", borderRadius: 6, marginBottom: 12 }} />
-        <div style={{ height: 22, width: "80%", background: "#EDE8E0", borderRadius: 6, marginBottom: 8 }} />
-        <div style={{ height: 12, width: "90%", background: "#EDE8E0", borderRadius: 6, marginBottom: 4 }} />
-        <div style={{ height: 12, width: "60%", background: "#EDE8E0", borderRadius: 6, marginBottom: 20 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ height: 28, width: 60, background: "#EDE8E0", borderRadius: 6 }} />
-          <div style={{ height: 42, width: 42, borderRadius: "50%", background: "#EDE8E0" }} />
+    <div style={{ background:"#FDFAF5",borderRadius:32,overflow:"hidden",animation:"skelPulse 1.4s ease-in-out infinite" }}>
+      <div style={{ height:160,background:"#EDE8E0" }} />
+      <div style={{ padding:"22px 22px 28px" }}>
+        {[["40%",10],["80%",22],["90%",12],["60%",12]].map(([w,h],i)=>(
+          <div key={i} style={{ height:h,width:w,background:"#EDE8E0",borderRadius:6,marginBottom:i===1?8:i===2?4:16 }} />
+        ))}
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+          <div style={{ height:28,width:60,background:"#EDE8E0",borderRadius:6 }} />
+          <div style={{ height:42,width:42,borderRadius:"50%",background:"#EDE8E0" }} />
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Shared image display styles ─────────────────────────────────────────── */
-const IMG_STYLE = {
-  height: "72%",
-  width: "auto",
-  maxWidth: "72%",
-  objectFit: "contain",
-  display: "block",
-  mixBlendMode: "multiply",
-  filter: "drop-shadow(0px 10px 18px rgba(44,24,16,0.22))",
-  transition: "transform 0.45s cubic-bezier(0.34,1.56,0.64,1), filter 0.3s ease",
-};
-const IMG_HOVER = {
-  transform: "scale(1.18) translateY(-5px)",
-  filter: "drop-shadow(0px 18px 28px rgba(44,24,16,0.35))",
-};
-const IMG_RESET = {
-  transform: "",
-  filter: "drop-shadow(0px 10px 18px rgba(44,24,16,0.22))",
-};
+const IMG_S = { height:"72%",width:"auto",maxWidth:"72%",objectFit:"contain",display:"block",mixBlendMode:"multiply",filter:"drop-shadow(0px 10px 18px rgba(44,24,16,0.22))",transition:"transform 0.45s cubic-bezier(0.34,1.56,0.64,1),filter 0.3s ease" };
+const IMG_H = { transform:"scale(1.18) translateY(-5px)",filter:"drop-shadow(0px 18px 28px rgba(44,24,16,0.35))" };
+const IMG_R = { transform:"",filter:"drop-shadow(0px 10px 18px rgba(44,24,16,0.22))" };
 
-/* ─── Menu Card ────────────────────────────────────────────────────────────── */
 function MenuCard({ item, inCart, onAdd }) {
-  const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
-  const catBg    = CATEGORY_COLORS[item.category] || "#E8D5A3";
-
+  const hasImg = !!(item.imageUrl?.trim());
+  const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
   return (
     <div className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative">
-      {/* shimmer sweep */}
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]" />
-
-      {/* ── Image / Emoji area ─────────────────────────────────────────────── */}
-      <div
-        className="relative z-10 overflow-hidden"
-        style={{ height: 180, backgroundColor: catBg, display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        {hasImage ? (
+      <div className="relative z-10 overflow-hidden" style={{ height:"clamp(140px,25vw,180px)",backgroundColor:catBg,display:"flex",alignItems:"center",justifyContent:"center" }}>
+        {hasImg ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={item.imageUrl}
-            alt={item.name}
-            style={IMG_STYLE}
-            onMouseEnter={(e) => Object.assign(e.currentTarget.style, IMG_HOVER)}
-            onMouseLeave={(e) => Object.assign(e.currentTarget.style, IMG_RESET)}
-          />
+          <img src={item.imageUrl} alt={item.name} style={IMG_S}
+            onMouseEnter={e=>Object.assign(e.currentTarget.style,IMG_H)}
+            onMouseLeave={e=>Object.assign(e.currentTarget.style,IMG_R)} />
         ) : (
-          <span className="text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">
-            {item.emoji}
-          </span>
+          <span className="text-[4.5rem] sm:text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">{item.emoji}</span>
         )}
-
         {item.special && (
-          <span className="absolute top-4 right-4 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10">
-            Chef&apos;s Pick
-          </span>
+          <span className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-rose-500 text-white text-[0.6rem] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-lg z-10">Chef&apos;s Pick</span>
         )}
       </div>
-
-      {/* ── Card body ──────────────────────────────────────────────────────── */}
-      <div className="p-6 pb-8 relative z-10 bg-[#FDFAF5]">
-        <p className="text-[#C9A84C] text-[0.75rem] font-bold uppercase tracking-widest mb-2">{item.tag}</p>
-        <h3 className="text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-2 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">
-          {item.name}
-        </h3>
-        <p className="text-[#7A6E65] text-sm mb-6 min-h-[40px] leading-relaxed">{item.desc}</p>
-
+      <div className="p-4 sm:p-6 pb-6 sm:pb-8 relative z-10 bg-[#FDFAF5]">
+        <p className="text-[#C9A84C] text-[0.7rem] font-bold uppercase tracking-widest mb-1.5">{item.tag}</p>
+        <h3 className="text-[1.3rem] sm:text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-1.5 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">{item.name}</h3>
+        <p className="text-[#7A6E65] text-xs sm:text-sm mb-4 sm:mb-6 min-h-[36px] leading-relaxed">{item.desc}</p>
         <div className="flex justify-between items-end mt-auto">
-          <span className="text-[1.8rem] font-bold font-[family-name:var(--font-cormorant)]">₹{item.price}</span>
+          <span className="text-[1.5rem] sm:text-[1.8rem] font-bold font-[family-name:var(--font-cormorant)]">₹{item.price}</span>
           <div className="relative">
-            {inCart && (
-              <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] rounded-full z-20 ring-2 ring-[#FDFAF5]"
-                style={{ background: "#8A9E8A" }} />
-            )}
-            <button
-              onClick={() => onAdd(item)}
+            {inCart && <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] rounded-full z-20 ring-2 ring-[#FDFAF5] bg-[#8A9E8A]" />}
+            <button onClick={()=>onAdd(item)}
               className="w-[42px] h-[42px] rounded-full bg-[#F7F2EA] flex items-center justify-center text-xl text-[#2C1810] shadow-sm group-hover:rotate-90 group-hover:bg-[#C9A84C] group-hover:text-white transition-all duration-300 border border-[#7A6E65]/10"
-              aria-label={`Add ${item.name} to cart`}
-            >+</button>
+              aria-label={`Add ${item.name}`}>+</button>
           </div>
         </div>
       </div>
@@ -152,316 +79,246 @@ function MenuCard({ item, inCart, onAdd }) {
   );
 }
 
-/* ─── Small image helper for cart / other small contexts ──────────────────── */
-function ItemThumb({ item, size = 44, imgPct = "80%" }) {
-  const catBg = CATEGORY_COLORS[item.category] || "#E8D5A3";
-  const hasImg = item.imageUrl && item.imageUrl.trim() !== "";
+function ItemThumb({ item, size=44, imgPct="80%" }) {
+  const hasImg = !!(item.imageUrl?.trim());
+  const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
   return (
-    <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), background: catBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-      {hasImg ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={item.imageUrl} alt={item.name} style={{ height: imgPct, width: "auto", maxWidth: imgPct, objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 2px 6px rgba(44,24,16,0.2))" }} />
-      ) : (
-        <span style={{ fontSize: size * 0.45 }}>{item.emoji}</span>
-      )}
+    <div style={{ width:size,height:size,borderRadius:Math.round(size*.22),background:catBg,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0 }}>
+      {hasImg
+        ? /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={item.imageUrl} alt={item.name} style={{ height:imgPct,width:"auto",maxWidth:imgPct,objectFit:"contain",mixBlendMode:"multiply",filter:"drop-shadow(0 2px 6px rgba(44,24,16,0.2))" }} />
+        : <span style={{ fontSize:size*.45 }}>{item.emoji}</span>
+      }
     </div>
   );
 }
 
 export default function CustomerMenu() {
-  const [tableNumber, setTableNumber]   = useState("");
-  const [tableEntered, setTableEntered] = useState(false);
+  const [tableNumber, setTableNumber]     = useState("");
+  const [tableEntered, setTableEntered]   = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [cart, setCart]               = useState([]);
-  const [isCartOpen, setIsCartOpen]   = useState(false);
-  const [orderNote, setOrderNote]     = useState("");
-  const [orderSuccess, setOrderSuccess] = useState(null);
-  const [isMounted, setIsMounted]     = useState(false);
+  const [cart, setCart]                   = useState([]);
+  const [isCartOpen, setIsCartOpen]       = useState(false);
+  const [orderNote, setOrderNote]         = useState("");
+  const [orderSuccess, setOrderSuccess]   = useState(null);
+  const [isMounted, setIsMounted]         = useState(false);
+  const [menuItems, setMenuItems]         = useState([]);
+  const [menuLoading, setMenuLoading]     = useState(true);
+  const [toasts, setToasts]               = useState([]);
+  const [cartBumping, setCartBumping]     = useState(false);
+  const prevCartCount                     = useRef(0);
 
-  /* ── Firebase menu items ─────────────────────────────────────────────────── */
-  const [menuItems, setMenuItems] = useState([]);
-  const [menuLoading, setMenuLoading] = useState(true);
+  useEffect(()=>{ setIsMounted(true); },[]);
 
-  /* ── Toast stack ─────────────────────────────────────────────────────────── */
-  const [toasts, setToasts] = useState([]);
-
-  /* ── Cart glow ───────────────────────────────────────────────────────────── */
-  const [cartBumping, setCartBumping] = useState(false);
-  const prevCartCount = useRef(0);
-
-  useEffect(() => { setIsMounted(true); }, []);
-
-  useEffect(() => {
-    const menuRef = ref(db, "menu");
-    const unsub = onValue(menuRef, (snap) => {
+  useEffect(()=>{
+    const menuRef = ref(db,"menu");
+    const unsub = onValue(menuRef,(snap)=>{
       const data = snap.val();
       if (data) {
-        const arr = Object.entries(data)
-          .map(([key, val]) => ({ ...val, id: key, firebaseKey: key }))
-          .filter(item => item.available !== false);
+        const arr = Object.entries(data).map(([k,v])=>({...v,id:k,firebaseKey:k})).filter(i=>i.available!==false);
         setMenuItems(arr.length ? arr : DEFAULT_ITEMS);
-      } else {
-        setMenuItems(DEFAULT_ITEMS);
-      }
+      } else setMenuItems(DEFAULT_ITEMS);
       setMenuLoading(false);
-    }, () => { setMenuItems(DEFAULT_ITEMS); setMenuLoading(false); });
-    return () => unsub();
-  }, []);
+    },()=>{ setMenuItems(DEFAULT_ITEMS); setMenuLoading(false); });
+    return ()=>unsub();
+  },[]);
 
-  const totalItems = cart.reduce((s, i) => s + i.qty, 0);
-  useEffect(() => {
-    if (totalItems > prevCartCount.current) {
-      setCartBumping(true);
-      const t = setTimeout(() => setCartBumping(false), 300);
-      prevCartCount.current = totalItems;
-      return () => clearTimeout(t);
-    }
+  const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+  useEffect(()=>{
+    if(totalItems>prevCartCount.current){ setCartBumping(true); setTimeout(()=>setCartBumping(false),300); }
     prevCartCount.current = totalItems;
-  }, [totalItems]);
+  },[totalItems]);
 
-  const showToast = (item) => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, emoji: item.emoji, name: item.name, category: item.category }].slice(-3));
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2500);
+  const showToast = (item)=>{
+    const id = Date.now()+Math.random();
+    setToasts(p=>[...p,{id,...item}].slice(-3));
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),2500);
   };
 
-  const handleTableSubmit = (e) => {
-    e.preventDefault();
-    if (tableNumber.trim()) setTableEntered(true);
-  };
-
-  const addToCart = (item) => {
-    setCart((prev) => {
-      const ex = prev.find((i) => i.id === item.id);
-      if (ex) return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { ...item, qty: 1 }];
-    });
+  const addToCart = (item)=>{
+    setCart(p=>{ const ex=p.find(i=>i.id===item.id); return ex ? p.map(i=>i.id===item.id?{...i,qty:i.qty+1}:i) : [...p,{...item,qty:1}]; });
     showToast(item);
   };
+  const updateQty = (id,d)=>setCart(p=>p.map(i=>i.id===id?{...i,qty:i.qty+d}:i).filter(i=>i.qty>0));
 
-  const updateQty = (id, delta) => {
-    setCart((prev) => prev.map((i) => i.id === id ? { ...i, qty: i.qty + delta } : i).filter((i) => i.qty > 0));
-  };
-
-  const placeOrder = async () => {
-    if (cart.length === 0) return;
+  const placeOrder = async ()=>{
+    if(!cart.length) return;
     try {
-      const { ref: fbRef, push, serverTimestamp } = await import("firebase/database");
-      const ordersRef = fbRef(db, "orders");
-      const orderData = {
-        table: tableNumber,
-        items: cart.map(({ name, emoji, imageUrl, category, qty, price, id }) => ({
-          name, emoji, imageUrl: imageUrl || "", category: category || "", qty, price, id,
-        })),
-        total: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-        status: "new",
-        note: orderNote,
-        timestamp: serverTimestamp(),
-        placedAt: new Date().toISOString(),
-      };
-      const newOrderInfo = await push(ordersRef, orderData);
-      setOrderSuccess(newOrderInfo.key.substring(newOrderInfo.key.length - 6).toUpperCase());
-      setCart([]);
-      setOrderNote("");
-      setIsCartOpen(false);
-    } catch (error) {
-      console.error("Failed to place order:", error);
-      alert("Failed to place order. Please try again.");
-    }
+      const { ref:fbRef, push } = await import("firebase/database");
+      await push(fbRef(db,"orders"),{
+        table:tableNumber,
+        items:cart.map(({name,emoji,imageUrl,category,qty,price,id})=>({name,emoji,imageUrl:imageUrl||"",category:category||"",qty,price,id})),
+        total:cart.reduce((s,i)=>s+i.price*i.qty,0),
+        status:"new", note:orderNote, placedAt:new Date().toISOString(), timestamp:Date.now(),
+      });
+      setOrderSuccess(Date.now().toString().slice(-6).toUpperCase());
+      setCart([]); setOrderNote(""); setIsCartOpen(false);
+    } catch(e) { console.error(e); alert("Failed to place order. Please try again."); }
   };
 
-  const filteredItems =
-    activeCategory === "All"
-      ? menuItems
-      : menuItems.filter(
-          (item) =>
-            item.category.toLowerCase() === activeCategory.split(" ")[1]?.toLowerCase() ||
-            item.category.toLowerCase() === activeCategory.toLowerCase()
-        );
+  const TABS = ["All","☕ Coffee","🍵 Tea","🥐 Food","🍰 Sweet"];
+  const filteredItems = activeCategory==="All" ? menuItems
+    : menuItems.filter(i=>i.category.toLowerCase()===activeCategory.split(" ")[1]?.toLowerCase()||i.category.toLowerCase()===activeCategory.toLowerCase());
 
-  const cartTotal     = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const cartItemCount = cart.reduce((sum, item) => sum + item.qty, 0);
-  const cartHasItems  = cartItemCount > 0;
+  const cartTotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const cartCount = cart.reduce((s,i)=>s+i.qty,0);
+  const cartHas   = cartCount>0;
 
-  const cartBtnStyle = {
-    ...(cartHasItems ? {
-      animation: `cartGlow 2s ease-in-out infinite${cartBumping ? ", cartBump 0.3s ease" : ""}`,
-      border: "1.5px solid rgba(201,168,76,0.6)",
-    } : {}),
-    ...(cartBumping && !cartHasItems ? { animation: "cartBump 0.3s ease" } : {}),
-  };
-  const badgeStyle = cartHasItems
-    ? { animation: "badgePulse 1.5s ease-in-out infinite", background: "#C9A84C", color: "#2C1810", fontWeight: 700 }
-    : {};
+  if(!isMounted) return null;
 
-  if (!isMounted) return null;
+  /* TABLE ENTRY */
+  if(!tableEntered) return (
+    <main className="min-h-screen flex items-center justify-center bg-[#F7F2EA] p-4 text-[#2C1810]">
+      <style>{KEYFRAMES}</style>
+      <div className="bg-[#FDFAF5] p-8 sm:p-12 rounded-3xl shadow-xl w-full text-center border border-[#7A6E65]/10 font-[family-name:var(--font-cormorant)]" style={{ maxWidth:"min(430px,95vw)" }}>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2">Welcome to</h1>
+        <h2 className="text-2xl sm:text-3xl italic text-[#C9A84C] mb-8">Lumière Café</h2>
+        <form onSubmit={e=>{e.preventDefault();if(tableNumber.trim())setTableEntered(true)}} className="space-y-6">
+          <div>
+            <label htmlFor="table" className="block text-lg sm:text-xl mb-3 text-[#7A6E65]">Enter your table number</label>
+            <input id="table" type="number" value={tableNumber} onChange={e=>setTableNumber(e.target.value)}
+              required className="w-full text-center text-4xl p-4 bg-transparent border-b-2 border-[#C9A84C] focus:outline-none min-h-[56px]" placeholder="0" min="1" max="99"/>
+          </div>
+          <button type="submit" className="w-full bg-[#C9A84C] text-[#FDFAF5] py-4 rounded-full text-xl font-bold hover:bg-[#b09038] transition-colors shadow-lg">View Menu</button>
+        </form>
+      </div>
+    </main>
+  );
 
-  /* ═══════════════════ TABLE ENTRY SCREEN ═══════════════════════════════════ */
-  if (!tableEntered) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-[#F7F2EA] p-4 text-[#2C1810]">
-        <style>{KEYFRAMES}</style>
-        <div className="bg-[#FDFAF5] p-12 rounded-3xl shadow-xl max-w-md w-full text-center border border-[#7A6E65]/10 font-[family-name:var(--font-cormorant)]">
-          <h1 className="text-4xl font-bold mb-2">Welcome to</h1>
-          <h2 className="text-3xl italic text-[#C9A84C] mb-8">Lumière Café</h2>
-          <form onSubmit={handleTableSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="table" className="block text-xl mb-3 text-[#7A6E65]">Please enter your table number</label>
-              <input id="table" type="number" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)}
-                required className="w-full text-center text-4xl p-4 bg-transparent border-b-2 border-[#C9A84C] focus:outline-none focus:border-[#2C1810] transition-colors"
-                placeholder="0" min="1" max="99" />
-            </div>
-            <button type="submit" className="w-full bg-[#C9A84C] text-[#FDFAF5] py-4 rounded-full text-xl font-bold hover:bg-[#b09038] transition-colors shadow-lg shadow-[#C9A84C]/30">
-              View Menu
-            </button>
-          </form>
-        </div>
-      </main>
-    );
-  }
-
-  /* ═══════════════════ MAIN MENU SCREEN ═════════════════════════════════════ */
+  /* MAIN MENU */
   return (
     <div className="min-h-screen bg-[#F7F2EA] text-[#2C1810] font-[family-name:var(--font-dm-sans)] pb-24">
       <style>{KEYFRAMES}</style>
 
       {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-[#F7F2EA]/80 backdrop-blur-md border-b border-[#7A6E65]/10">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-3xl font-[family-name:var(--font-cormorant)] font-bold">
+      <header className="sticky top-0 z-40 bg-[#F7F2EA]/80 backdrop-blur-md border-b border-[#7A6E65]/10" style={{ height:52 }}>
+        <div className="h-full max-w-7xl mx-auto px-3 sm:px-8 flex justify-between items-center">
+          <h1 className="font-[family-name:var(--font-cormorant)] font-bold" style={{ fontSize:"clamp(1.2rem,4vw,1.5rem)" }}>
             Lumière <span className="italic text-[#C9A84C]">Café</span>
           </h1>
-          <div className="flex items-center gap-4">
-            <div className="bg-[#FDFAF5] px-4 py-2 rounded-full text-sm font-semibold shadow-sm border border-[#7A6E65]/10">
-              Table {tableNumber}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="bg-[#FDFAF5] px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm border border-[#7A6E65]/10">
+              <span className="hidden sm:inline">Table </span>T{tableNumber}
             </div>
-            <button onClick={() => setIsCartOpen(true)}
-              className="relative p-3 bg-[#FDFAF5] rounded-full shadow-sm hover:shadow-md transition-shadow border border-[#7A6E65]/10"
-              style={cartBtnStyle}>
+            <button onClick={()=>setIsCartOpen(true)}
+              className="relative p-2.5 sm:p-3 bg-[#FDFAF5] rounded-full shadow-sm border border-[#7A6E65]/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              style={ cartHas ? { animation:`cartGlow 2s ease-in-out infinite${cartBumping?",cartBump .3s ease":""}`,border:"1.5px solid rgba(201,168,76,.6)" } : {} }>
               🛒
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 text-xs h-6 w-6 rounded-full flex items-center justify-center" style={badgeStyle}>
-                  {cartItemCount}
-                </span>
+              {cartCount>0 && (
+                <span className="absolute -top-1 -right-1 text-xs h-5 w-5 rounded-full flex items-center justify-center"
+                  style={{ animation:"badgePulse 1.5s ease-in-out infinite",background:"#C9A84C",color:"#2C1810",fontWeight:700 }}>{cartCount}</span>
               )}
             </button>
           </div>
         </div>
       </header>
 
-      {/* MAIN */}
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
-        <div className="text-center mb-16 px-4">
-          <h2 className="text-[clamp(3rem,6vw,6rem)] leading-none font-bold font-[family-name:var(--font-cormorant)] mb-6 text-[#2C1810]">
+      <main className="max-w-7xl mx-auto px-3 sm:px-8 py-8 sm:py-12">
+        {/* HERO */}
+        <div className="text-center mb-10 sm:mb-16 px-2">
+          <h2 className="leading-none font-bold font-[family-name:var(--font-cormorant)] mb-4 text-[#2C1810]"
+            style={{ fontSize:"clamp(2.2rem,7vw,5rem)" }}>
             A Menu Made with{" "}<span className="italic text-[#7A6E65]">Love</span>
           </h2>
-          <div className="h-px w-24 bg-[#C9A84C] mx-auto" />
+          <div className="h-px w-20 bg-[#C9A84C] mx-auto" />
         </div>
 
-        {/* CATEGORY FILTERS */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {["All", "☕ Coffee", "🍵 Tea", "🥐 Food", "🍰 Sweet"].map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-6 py-3 rounded-full text-lg transition-all duration-300 ${
-                activeCategory === cat
-                  ? "bg-[#2C1810] text-[#FDFAF5] shadow-lg shadow-[#2C1810]/20 font-bold"
+        {/* CATEGORY TABS — horizontally scrollable on mobile */}
+        <div className="flex gap-2 sm:gap-3 mb-8 sm:mb-12 overflow-x-auto scroll-hide pb-1">
+          {TABS.map(cat=>(
+            <button key={cat} onClick={()=>setActiveCategory(cat)}
+              className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-sm sm:text-lg transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                activeCategory===cat
+                  ? "bg-[#2C1810] text-[#FDFAF5] shadow-lg font-bold"
                   : "bg-transparent text-[#7A6E65] border border-[#7A6E65]/30 hover:border-[#2C1810] hover:text-[#2C1810]"
-              }`}
-            >{cat}</button>
+              }`}>{cat}</button>
           ))}
         </div>
 
         {/* MENU GRID */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-8">
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:"clamp(16px,3vw,32px)" }}>
           {menuLoading
-            ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            : filteredItems.map((item) => (
-                <MenuCard
-                  key={item.id || item.firebaseKey}
-                  item={item}
-                  inCart={!!cart.find((c) => c.id === item.id)}
-                  onAdd={addToCart}
-                />
+            ? Array.from({length:6}).map((_,i)=><SkeletonCard key={i}/>)
+            : filteredItems.map(item=>(
+                <MenuCard key={item.id||item.firebaseKey} item={item} inCart={!!cart.find(c=>c.id===item.id)} onAdd={addToCart}/>
               ))
           }
         </div>
       </main>
 
-      {/* TOAST OVERLAY */}
-      {toasts.length > 0 && (
-        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 500, display: "flex", flexDirection: "column-reverse", alignItems: "center", gap: 8, pointerEvents: "none" }}>
-          {toasts.map((toast) => (
-            <div key={toast.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px 10px 12px", borderRadius: 50, background: "#2C1810", border: "1px solid rgba(201,168,76,0.35)", boxShadow: "0 8px 32px rgba(44,24,16,0.35)", animation: "toastIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: "#F5EDD6", whiteSpace: "nowrap" }}>
-              <span style={{ width: 32, height: 32, borderRadius: "50%", background: CATEGORY_COLORS[toast.category] || "rgba(201,168,76,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>{toast.emoji}</span>
-              <span style={{ fontWeight: 700, color: "#C9A84C" }}>{toast.name}</span>
-              <span style={{ opacity: 0.85 }}>added to your order</span>
-              <span style={{ background: "#4A7C59", color: "#fff", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700, flexShrink: 0 }}>✓</span>
+      {/* TOASTS */}
+      {toasts.length>0 && (
+        <div style={{ position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",zIndex:500,display:"flex",flexDirection:"column-reverse",alignItems:"center",gap:8,pointerEvents:"none",width:"90vw",maxWidth:400 }}>
+          {toasts.map(t=>(
+            <div key={t.id} style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 18px 10px 12px",borderRadius:50,background:"#2C1810",border:"1px solid rgba(201,168,76,.35)",boxShadow:"0 8px 32px rgba(44,24,16,.35)",animation:"toastIn .45s cubic-bezier(.34,1.56,.64,1) both",fontFamily:"Georgia,serif",fontSize:"clamp(0.78rem,3vw,0.9rem)",color:"#F5EDD6",whiteSpace:"nowrap",overflow:"hidden" }}>
+              <span style={{ width:32,height:32,borderRadius:"50%",background:CATEGORY_COLORS[t.category]||"rgba(201,168,76,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0 }}>{t.emoji}</span>
+              <span style={{ fontWeight:700,color:"#C9A84C",overflow:"hidden",textOverflow:"ellipsis" }}>{t.name}</span>
+              <span style={{ opacity:.85 }}>added</span>
+              <span style={{ background:"#4A7C59",color:"#fff",borderRadius:"50%",width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",fontSize:".75rem",fontWeight:700,flexShrink:0 }}>✓</span>
             </div>
           ))}
         </div>
       )}
 
       {/* CART PANEL */}
-      <div className={`fixed inset-y-0 right-0 w-full md:w-[380px] bg-[#FDFAF5] shadow-2xl z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isCartOpen ? "translate-x-0" : "translate-x-full"}`}>
-        <div className="bg-[#2C1810] text-[#FDFAF5] p-6 flex justify-between items-center">
-          <h2 className="text-2xl font-bold font-[family-name:var(--font-cormorant)]">Your Order</h2>
-          <button onClick={() => setIsCartOpen(false)} className="text-white/70 hover:text-white p-2 text-xl transition-colors">✕</button>
+      <div className={`fixed inset-y-0 right-0 bg-[#FDFAF5] shadow-2xl z-50 flex flex-col transform transition-transform duration-500 ease-[cubic-bezier(.25,1,.5,1)] ${isCartOpen?"translate-x-0":"translate-x-full"}`}
+        style={{ width:"min(100vw,420px)" }}>
+        <div className="bg-[#2C1810] text-[#FDFAF5] px-5 py-4 flex justify-between items-center">
+          <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-cormorant)]">Your Order</h2>
+          <button onClick={()=>setIsCartOpen(false)} className="text-white/70 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center text-xl rounded-full">✕</button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 bg-[#FDFAF5]">
-          {cart.length === 0 ? (
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFAF5]">
+          {cart.length===0 ? (
             <div className="h-full flex flex-col justify-center items-center text-center opacity-50 space-y-4">
               <span className="text-6xl grayscale opacity-30">🍽️</span>
-              <p className="text-xl font-[family-name:var(--font-cormorant)] italic pb-20">Your cart awaits your cravings...</p>
+              <p className="text-xl font-[family-name:var(--font-cormorant)] italic pb-20">Your cart awaits...</p>
             </div>
           ) : (
-            <ul className="space-y-4">
-              {cart.map((item) => (
+            <ul className="space-y-3">
+              {cart.map(item=>(
                 <li key={item.id} className="flex gap-3 items-center bg-white p-3 rounded-2xl border border-[#F7F2EA] shadow-sm">
-                  <ItemThumb item={item} size={44} imgPct="80%" />
-                  <div className="flex-1">
-                    <h4 className="font-bold text-[#2C1810] leading-tight text-sm">{item.name}</h4>
+                  <ItemThumb item={item} size={44} imgPct="80%"/>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-[#2C1810] leading-tight text-sm truncate">{item.name}</h4>
                     <span className="text-[#7A6E65] font-bold text-sm">₹{item.price}</span>
                   </div>
-                  <div className="flex items-center gap-2 bg-[#F7F2EA] rounded-full px-2 py-1">
-                    <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full transition-colors">-</button>
-                    <span className="w-4 text-center font-bold text-[#2C1810] text-sm">{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full transition-colors">+</button>
+                  <div className="flex items-center gap-1 bg-[#F7F2EA] rounded-full px-1.5 py-1">
+                    <button onClick={()=>updateQty(item.id,-1)} className="w-8 h-8 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full">-</button>
+                    <span className="w-5 text-center font-bold text-[#2C1810] text-sm">{item.qty}</span>
+                    <button onClick={()=>updateQty(item.id,1)} className="w-8 h-8 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full">+</button>
                   </div>
                 </li>
               ))}
             </ul>
           )}
         </div>
-        <div className="p-6 bg-white border-t border-[#7A6E65]/10 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
-          <textarea value={orderNote} onChange={(e) => setOrderNote(e.target.value)} placeholder="Special instructions or allergies..." className="w-full bg-[#F7F2EA] border border-[#7A6E65]/10 rounded-xl p-3 mb-4 focus:outline-none focus:border-[#C9A84C] text-sm resize-none h-20 placeholder:text-[#7A6E65]/50 text-[#2C1810]" />
-          <div className="flex justify-between items-end mb-6 text-[#2C1810]">
-            <span className="text-lg text-[#7A6E65]">Total</span>
-            <span className="text-3xl font-bold font-[family-name:var(--font-cormorant)]">₹{cartTotal}</span>
+        <div className="p-4 sm:p-6 bg-white border-t border-[#7A6E65]/10 safe-bottom">
+          <textarea value={orderNote} onChange={e=>setOrderNote(e.target.value)} placeholder="Special instructions..." className="w-full bg-[#F7F2EA] border border-[#7A6E65]/10 rounded-xl p-3 mb-4 focus:outline-none focus:border-[#C9A84C] text-sm resize-none h-16 sm:h-20 placeholder:text-[#7A6E65]/50 text-[#2C1810]"/>
+          <div className="flex justify-between items-center mb-4 text-[#2C1810]">
+            <span className="text-base sm:text-lg text-[#7A6E65]">Total</span>
+            <span className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-cormorant)]">₹{cartTotal}</span>
           </div>
-          <button onClick={placeOrder} disabled={cart.length === 0} className="w-full bg-[#C9A84C] text-[#FDFAF5] py-4 rounded-xl text-lg font-bold hover:bg-[#b09038] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#C9A84C]/20 active:scale-[0.98]">
+          <button onClick={placeOrder} disabled={!cart.length} className="w-full bg-[#C9A84C] text-[#FDFAF5] py-4 rounded-xl text-base sm:text-lg font-bold hover:bg-[#b09038] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[.98] min-h-[52px]">
             Place Order
           </button>
         </div>
       </div>
-
-      {isCartOpen && <div className="fixed inset-0 bg-[#2C1810]/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setIsCartOpen(false)} />}
+      {isCartOpen && <div className="fixed inset-0 bg-[#2C1810]/20 backdrop-blur-sm z-40" onClick={()=>setIsCartOpen(false)}/>}
 
       {/* SUCCESS MODAL */}
       {orderSuccess && (
         <div className="fixed inset-0 bg-[#2C1810]/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-[#FDFAF5] rounded-[2rem] p-10 max-w-sm w-full text-center shadow-2xl animate-[dropIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)]">
-            <div className="w-20 h-20 bg-[#C9A84C]/10 rounded-full mx-auto flex items-center justify-center mb-6">
-              <span className="text-4xl">✨</span>
+          <div className="bg-[#FDFAF5] rounded-[2rem] p-8 sm:p-10 text-center shadow-2xl animate-[dropIn_.5s_cubic-bezier(.175,.885,.32,1.275)]" style={{ width:"min(440px,94vw)",maxHeight:"92vh",overflowY:"auto" }}>
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#C9A84C]/10 rounded-full mx-auto flex items-center justify-center mb-5 sm:mb-6">
+              <span className="text-3xl sm:text-4xl">✨</span>
             </div>
-            <h2 className="text-3xl font-bold font-[family-name:var(--font-cormorant)] text-[#2C1810] mb-2">Order Sent!</h2>
-            <p className="text-[#7A6E65] mb-8">Your amazing treats will arrive shortly.</p>
-            <div className="bg-[#F7F2EA] rounded-xl p-4 mb-8 border border-[#7A6E65]/10">
+            <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-cormorant)] text-[#2C1810] mb-2">Order Sent!</h2>
+            <p className="text-[#7A6E65] mb-6 sm:mb-8 text-sm sm:text-base">Your treats will arrive shortly.</p>
+            <div className="bg-[#F7F2EA] rounded-xl p-4 mb-6 sm:mb-8 border border-[#7A6E65]/10">
               <span className="block text-xs uppercase tracking-widest text-[#7A6E65] font-bold mb-1">Order ID</span>
               <span className="text-2xl font-bold text-[#C9A84C] tracking-wide">{orderSuccess}</span>
             </div>
-            <button onClick={() => setOrderSuccess(null)} className="w-full bg-[#2C1810] text-[#FDFAF5] py-4 rounded-full font-bold hover:bg-black transition-colors">
-              Close
-            </button>
+            <button onClick={()=>setOrderSuccess(null)} className="w-full bg-[#2C1810] text-[#FDFAF5] py-4 rounded-full font-bold hover:bg-black transition-colors min-h-[52px]">Close</button>
           </div>
         </div>
       )}

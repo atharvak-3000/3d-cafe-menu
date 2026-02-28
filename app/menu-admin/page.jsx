@@ -121,7 +121,7 @@ function ItemModal({ item, onClose, onSaved }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(44,24,16,0.45)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "#FDFAF5", borderRadius: 24, width: "100%", maxWidth: 880, maxHeight: "92vh", overflow: "auto", boxShadow: "0 24px 80px rgba(44,24,16,0.25)", display: "flex", flexDirection: "row", flexWrap: "wrap" }}>
+      <div className="admin-modal-inner" style={{ background: "#FDFAF5", borderRadius: 24, width: "min(880px, 95vw)", maxHeight: "92vh", overflow: "auto", boxShadow: "0 24px 80px rgba(44,24,16,0.25)", display: "flex", flexDirection: "row", flexWrap: "wrap" }}>
 
         {/* Form side */}
         <div style={{ flex: "1 1 340px", padding: "32px 28px", minWidth: 300 }}>
@@ -203,9 +203,9 @@ function ItemModal({ item, onClose, onSaved }) {
             </div>
 
             {/* Actions */}
-            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <button onClick={onClose} style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid rgba(122,110,101,0.2)", background: "transparent", color: "#7A6E65", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleSave} disabled={saving || !form.name || !form.price} style={{ flex: 2, padding: "11px 0", borderRadius: 12, background: saving ? "#b09038" : "#C9A84C", border: "none", color: "#FDFAF5", fontWeight: 700, fontSize: "0.9rem", cursor: saving ? "not-allowed" : "pointer", transition: "background 0.2s" }}>
+            <div className="admin-form-buttons" style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              <button onClick={onClose} style={{ flex: 1, padding: "12px 0", borderRadius: 12, border: "1.5px solid rgba(122,110,101,0.2)", background: "transparent", color: "#7A6E65", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", minHeight: 44 }}>Cancel</button>
+              <button onClick={handleSave} disabled={saving || !form.name || !form.price} style={{ flex: 2, padding: "12px 0", borderRadius: 12, background: saving ? "#b09038" : "#C9A84C", border: "none", color: "#FDFAF5", fontWeight: 700, fontSize: "0.9rem", cursor: saving ? "not-allowed" : "pointer", transition: "background 0.2s", minHeight: 44 }}>
                 {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Item"}
               </button>
             </div>
@@ -213,7 +213,7 @@ function ItemModal({ item, onClose, onSaved }) {
         </div>
 
         {/* Preview side */}
-        <div style={{ flex: "0 0 280px", background: "#F7F2EA", borderLeft: "1px solid rgba(122,110,101,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", gap: 16 }}>
+        <div className="admin-modal-preview" style={{ flex: "0 0 280px", background: "#F7F2EA", borderLeft: "1px solid rgba(122,110,101,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", gap: 16 }}>
           <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "#7A6E65", marginBottom: 4 }}>Live Preview</p>
           <CardPreview form={form} />
         </div>
@@ -243,7 +243,7 @@ function ItemRow({ item, onEdit, onDelete, onToggleAvailable, onToggleSpecial })
   const muted  = !item.available;
 
   return (
-    <div style={{ background: "#FDFAF5", borderRadius: 16, border: "1px solid rgba(122,110,101,0.1)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, opacity: muted ? 0.55 : 1, transition: "opacity 0.2s" }}>
+    <div className="admin-item-row" style={{ background: "#FDFAF5", borderRadius: 16, border: "1px solid rgba(122,110,101,0.1)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, opacity: muted ? 0.55 : 1, transition: "opacity 0.2s" }}>
       <span style={{ color: "#D5CBBF", fontSize: "1rem", cursor: "grab", flexShrink: 0 }}>⠿</span>
 
       {/* image / emoji thumbnail */}
@@ -268,7 +268,7 @@ function ItemRow({ item, onEdit, onDelete, onToggleAvailable, onToggleSpecial })
       </div>
 
       {/* actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
+      <div className="admin-item-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Toggle checked={item.available !== false} onChange={() => onToggleAvailable(item)} green />
           <span style={{ fontSize: "0.7rem", color: "#7A6E65", fontWeight: 600 }}>{item.available !== false ? "On" : "Off"}</span>
@@ -334,17 +334,17 @@ export default function MenuAdminPage() {
     <div style={{ minHeight: "100vh", background: "#F7F2EA", color: "#2C1810", fontFamily: "DM Sans, sans-serif", paddingBottom: 64 }}>
 
       {/* TOPBAR */}
-      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(122,110,101,0.12)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 700, color: "#2C1810", margin: 0 }}>
+      <header className="admin-topbar" style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(122,110,101,0.12)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.1rem,3vw,1.5rem)", fontWeight: 700, color: "#2C1810", margin: 0 }}>
             Lumière <span style={{ color: "#C9A84C", fontStyle: "italic" }}>Café</span>
           </h1>
-          <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(201,168,76,0.5)", color: "#C9A84C" }}>Menu Manager</span>
+          <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(201,168,76,0.5)", color: "#C9A84C", whiteSpace: "nowrap" }}>Menu Manager</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="topbar-right">
           <span style={{ background: "#F7F2EA", border: "1px solid rgba(122,110,101,0.15)", borderRadius: 999, padding: "5px 14px", fontSize: "0.82rem", fontWeight: 700, color: "#7A6E65" }}>{items.length} items</span>
-          <button onClick={() => setModal("add")} style={{ padding: "8px 18px", borderRadius: 12, background: "#C9A84C", border: "none", color: "#FDFAF5", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,168,76,0.35)" }}>+ Add Item</button>
-          <button onClick={() => setAuthed(false)} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(122,110,101,0.2)", background: "transparent", color: "#7A6E65", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>Logout</button>
+          <button className="add-btn" onClick={() => setModal("add")} style={{ padding: "10px 18px", borderRadius: 12, background: "#C9A84C", border: "none", color: "#FDFAF5", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,168,76,0.35)", minHeight: 44 }}>+ Add Item</button>
+          <button onClick={() => setAuthed(false)} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(122,110,101,0.2)", background: "transparent", color: "#7A6E65", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", minHeight: 44 }}>Logout</button>
         </div>
       </header>
 
@@ -380,7 +380,7 @@ export default function MenuAdminPage() {
         {/* Category Overview */}
         <section>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 700, color: "#C9A84C", marginBottom: 16 }}>Category Overview</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px,1fr))", gap: 14 }}>
+          <div className="cat-overview-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px,1fr))", gap: 14 }}>
             {catStats.map(c => (
               <div key={c.key} style={{ background: "#FDFAF5", borderRadius: 16, border: "1px solid rgba(122,110,101,0.1)", borderLeft: `3px solid ${CATEGORY_COLORS[c.key] || "#C9A84C"}`, padding: "18px 20px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -400,6 +400,65 @@ export default function MenuAdminPage() {
 
       {modal && <ItemModal item={modal === "add" ? null : modal} onClose={() => setModal(null)} onSaved={showToast} />}
       {toast && <SuccessToast msg={toast} />}
+
+      <style>{`
+        /* ── Admin responsive overrides ───────────────────────────── */
+        .admin-topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        .admin-topbar .topbar-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        @media (max-width: 640px) {
+          .admin-topbar {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .admin-topbar .topbar-right {
+            justify-content: space-between;
+          }
+          .admin-topbar .add-btn {
+            flex: 1;
+            text-align: center;
+          }
+          .admin-modal-inner {
+            flex-direction: column !important;
+            max-height: 92vh;
+          }
+          .admin-modal-preview {
+            border-left: none !important;
+            border-top: 1px solid rgba(122,110,101,0.1);
+            padding: 20px 20px 24px !important;
+          }
+          .admin-form-buttons {
+            flex-direction: column-reverse !important;
+          }
+          .admin-form-buttons button {
+            width: 100% !important;
+          }
+          .admin-item-row {
+            flex-wrap: wrap;
+          }
+          .admin-item-actions {
+            width: 100%;
+            justify-content: flex-end !important;
+            border-top: 1px solid rgba(122,110,101,0.1);
+            padding-top: 8px;
+            margin-top: 4px;
+          }
+          .cat-overview-grid {
+            grid-template-columns: repeat(2,1fr) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
