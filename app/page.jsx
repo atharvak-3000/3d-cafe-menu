@@ -72,15 +72,16 @@ function MenuCard({ item, inCart, onAdd, isMostOrdered }) {
     /* IMPORTANT: no overflow-hidden on outer card — it breaks blend mode stacking context */
     <div
       className="group bg-[#FDFAF5] rounded-[2rem] shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
-      style={{ overflow: "visible" }}
+      style={{ overflow: "hidden" }}
     >
       {/* shimmer sweep */}
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite] pointer-events-none" />
 
-      {/* IMAGE AREA — isolation:isolate creates fresh blend-mode stacking context */}
+      {/* IMAGE AREA */}
       <div
-        className="relative z-10 overflow-hidden"
+        className="relative z-10"
         style={{
+          width: "100%",               /* CRITICAL: must be 100% or flex collapses it */
           height: "clamp(140px,25vw,180px)",
           backgroundColor: catBg,
           backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.2) 0%, transparent 70%)",
@@ -89,6 +90,7 @@ function MenuCard({ item, inCart, onAdd, isMostOrdered }) {
           justifyContent: "center",
           position: "relative",
           isolation: "isolate",
+          overflow: "hidden",
           borderRadius: "22px 22px 0 0",
         }}
       >
@@ -107,6 +109,7 @@ function MenuCard({ item, inCart, onAdd, isMostOrdered }) {
               display: "block",
               position: "relative",
               zIndex: 2,
+              flexShrink: 0,            /* prevent flex from shrinking the image */
               filter: "drop-shadow(0 10px 24px rgba(44,24,16,0.15))",
               transition: "transform 0.45s cubic-bezier(0.34,1.56,0.64,1), filter 0.3s ease",
               backgroundColor: "transparent",
@@ -127,9 +130,17 @@ function MenuCard({ item, inCart, onAdd, isMostOrdered }) {
         )}
 
         {item.special && (
-          <span className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-rose-500 text-white text-[0.6rem] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
-            Chef&apos;s Pick
-          </span>
+          <div style={{
+            position: "absolute", top: 10, right: 10, zIndex: 10,
+            background: "#C4807A",
+            color: "white",
+            fontSize: "0.58rem", fontWeight: 600,
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            padding: "3px 9px", borderRadius: 12,
+            pointerEvents: "none",
+          }}>
+            ✶ Chef&apos;s Pick
+          </div>
         )}
 
         {/* Most Ordered badge on matching grid card */}
