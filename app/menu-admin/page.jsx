@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import PinPad from "@/components/PinPad";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { ref, onValue, set, push, update, remove } from "firebase/database";
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { menuItems as DEFAULT_ITEMS, CATEGORY_COLORS } from "@/lib/menuItems";
+
+const CLOUDINARY_CLOUD = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || "0000";
 
@@ -295,30 +297,35 @@ function ItemModal({ item, onClose, onSaved }) {
       let finalImageUrl = form.imageUrl;
 
       if (imageRemoved) {
-        // Admin clicked Remove — clear it
+        // Admin clicked Remove — clear imageUrl
         finalImageUrl = "";
       } else if (imageFile) {
-        // Upload new image to Firebase Storage
-        const filename = `${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        const imgRef = storageRef(storage, `menu-images/${filename}`);
-        const uploadTask = uploadBytesResumable(imgRef, imageFile);
-
+        // Upload to Cloudinary via unsigned upload preset
         finalImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              setUploadProgress(pct);
-            },
-            (err) => {
-              console.error("Upload error:", err);
-              reject(err);
-            },
-            async () => {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(url);
+          const formData = new FormData();
+          formData.append("file", imageFile);
+          formData.append("upload_preset", CLOUDINARY_PRESET);
+
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setUploadProgress(Math.round((e.loaded / e.total) * 100));
             }
-          );
+          };
+
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              const data = JSON.parse(xhr.responseText);
+              resolve(data.secure_url);
+            } else {
+              reject(new Error("Cloudinary upload failed"));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error("Network error during upload"));
+          xhr.send(formData);
         });
       }
 
