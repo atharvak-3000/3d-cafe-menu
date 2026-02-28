@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import PinPad from "@/components/PinPad";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { ref, onValue, set, push, update, remove } from "firebase/database";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { menuItems as DEFAULT_ITEMS, CATEGORY_COLORS } from "@/lib/menuItems";
 
 const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || "0000";
@@ -21,6 +22,7 @@ const BLANK = {
   name: "", category: "coffee", emoji: "☕",
   tag: "", desc: "", price: "",
   special: false, available: true,
+  imageUrl: "",
 };
 
 /* ── tiny Toggle switch ─────────────────────────────────────────────────────── */
@@ -70,8 +72,9 @@ function SuccessToast({ msg }) {
 }
 
 /* ── Mini card preview ──────────────────────────────────────────────────────── */
-function CardPreview({ form }) {
+function CardPreview({ form, imageUrl }) {
   const bg = CATEGORY_COLORS[form.category] || "#E8D5A3";
+  const displayImageUrl = imageUrl || form.imageUrl || "";
   return (
     <div style={{
       background: "#FDFAF5", borderRadius: 24, overflow: "hidden",
@@ -81,15 +84,25 @@ function CardPreview({ form }) {
       <div style={{
         height: 120, background: bg,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: "3rem", position: "relative",
+        fontSize: "3rem", position: "relative", overflow: "hidden",
       }}>
-        {form.emoji || "🍽️"}
+        {displayImageUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={displayImageUrl}
+            alt={form.name || "Preview"}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          form.emoji || "🍽️"
+        )}
         {form.special && (
           <span style={{
             position: "absolute", top: 8, right: 8,
             background: "#ef4444", color: "#fff",
             fontSize: "0.65rem", fontWeight: 700,
             padding: "3px 8px", borderRadius: 999,
+            zIndex: 2,
           }}>Chef&apos;s Pick</span>
         )}
       </div>
@@ -111,6 +124,109 @@ function CardPreview({ form }) {
   );
 }
 
+/* ── Image Upload Box ───────────────────────────────────────────────────────── */
+function ImageUploadBox({ previewUrl, onFileSelected, onRemove, uploadProgress, uploadError, isDragging, onDragOver, onDragLeave, onDrop }) {
+  const inputRef = useRef(null);
+
+  return (
+    <div>
+      <label style={{
+        display: "block", fontSize: "0.72rem", fontWeight: 700,
+        textTransform: "uppercase", letterSpacing: "0.1em",
+        color: "#7A6E65", marginBottom: 5,
+      }}>
+        Item Image
+      </label>
+
+      {/* Drop zone */}
+      <div
+        onClick={() => !previewUrl && inputRef.current?.click()}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        style={{
+          position: "relative",
+          height: 160,
+          borderRadius: 16,
+          border: isDragging
+            ? "2px solid #C9A84C"
+            : "2px dashed rgba(201,168,76,0.4)",
+          background: isDragging ? "rgba(201,168,76,0.05)" : "#F7F2EA",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexDirection: "column", gap: 8,
+          cursor: previewUrl ? "default" : "pointer",
+          overflow: "hidden",
+          transition: "border-color 0.2s, background 0.2s",
+        }}
+      >
+        {previewUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt="Preview"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+            {/* Remove button */}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              style={{
+                position: "absolute", top: 8, right: 8,
+                background: "#2C1810", color: "#fff",
+                border: "none", borderRadius: 8,
+                padding: "4px 10px", fontSize: "0.72rem",
+                fontWeight: 700, cursor: "pointer",
+                zIndex: 2,
+              }}
+            >✕ Remove</button>
+
+            {/* Upload progress bar */}
+            {uploadProgress !== null && (
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                height: 4, background: "rgba(0,0,0,0.2)",
+              }}>
+                <div style={{
+                  height: "100%", background: "#C9A84C",
+                  width: `${uploadProgress}%`,
+                  transition: "width 0.3s ease",
+                }} />
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: "2rem", lineHeight: 1 }}>📷</span>
+            <span style={{ color: "#7A6E65", fontSize: "0.82rem", fontWeight: 600, textAlign: "center", paddingInline: 16 }}>
+              Drop image here or click to upload
+            </span>
+            <span style={{ color: "#B0A89E", fontSize: "0.7rem" }}>
+              JPG, PNG, WEBP · Max 2MB
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => onFileSelected(e.target.files[0])}
+      />
+
+      {/* Validation error */}
+      {uploadError && (
+        <p style={{ color: "#DC2626", fontSize: "0.75rem", marginTop: 5, fontWeight: 600 }}>
+          {uploadError}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ── Add/Edit Modal ─────────────────────────────────────────────────────────── */
 function ItemModal({ item, onClose, onSaved }) {
   const isEdit = !!item?.firebaseKey;
@@ -119,30 +235,113 @@ function ItemModal({ item, onClose, onSaved }) {
     emoji: item.emoji || "☕", tag: item.tag || "",
     desc: item.desc || "", price: item.price || "",
     special: item.special || false, available: item.available !== false,
+    imageUrl: item.imageUrl || "",
   } : { ...BLANK });
   const [saving, setSaving] = useState(false);
 
+  /* ── Image upload state ───────────────────────────────────────────────────── */
+  const [imageFile, setImageFile]           = useState(null);   // new File to upload
+  const [previewUrl, setPreviewUrl]         = useState(item?.imageUrl || ""); // local blob or existing URL
+  const [uploadError, setUploadError]       = useState("");
+  const [uploadProgress, setUploadProgress] = useState(null);   // 0-100 or null
+  const [isDragging, setIsDragging]         = useState(false);
+  const [imageRemoved, setImageRemoved]     = useState(false);  // admin clicked ✕ Remove
+
   const set_ = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  /* ── Validate & accept a file ─────────────────────────────────────────────── */
+  const processFile = (file) => {
+    if (!file) return;
+    setUploadError("");
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError("Image too large. Max 2MB.");
+      return;
+    }
+    setImageFile(file);
+    setImageRemoved(false);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
+
+  /* ── Drag & drop handlers ─────────────────────────────────────────────────── */
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    processFile(e.dataTransfer.files[0]);
+  };
+
+  /* ── Remove image ─────────────────────────────────────────────────────────── */
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setPreviewUrl("");
+    setImageRemoved(true);
+    setUploadError("");
+    setUploadProgress(null);
+  };
+
+  /* ── Save ─────────────────────────────────────────────────────────────────── */
   const handleSave = async () => {
     if (!form.name || !form.price) return;
     setSaving(true);
-    const payload = {
-      ...form,
-      tag: form.tag.toUpperCase(),
-      price: Number(form.price),
-      available: form.available !== false,
-    };
+    setUploadError("");
+
     try {
+      let finalImageUrl = form.imageUrl;
+
+      if (imageRemoved) {
+        // Admin clicked Remove — clear it
+        finalImageUrl = "";
+      } else if (imageFile) {
+        // Upload new image to Firebase Storage
+        const filename = `${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const imgRef = storageRef(storage, `menu-images/${filename}`);
+        const uploadTask = uploadBytesResumable(imgRef, imageFile);
+
+        finalImageUrl = await new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+              setUploadProgress(pct);
+            },
+            (err) => {
+              console.error("Upload error:", err);
+              reject(err);
+            },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            }
+          );
+        });
+      }
+
+      const payload = {
+        ...form,
+        tag: form.tag.toUpperCase(),
+        price: Number(form.price),
+        available: form.available !== false,
+        imageUrl: finalImageUrl,
+      };
+
       if (isEdit) {
         await update(ref(db, `menu/${item.firebaseKey}`), payload);
       } else {
         await push(ref(db, "menu"), payload);
       }
+
       onSaved(isEdit ? "Item updated" : "Item added");
       onClose();
-    } finally {
+    } catch {
+      setUploadError("Upload failed. Try again.");
       setSaving(false);
+      setUploadProgress(null);
     }
   };
 
@@ -198,12 +397,25 @@ function ItemModal({ item, onClose, onSaved }) {
 
             {/* Emoji */}
             <div>
-              <label style={labelStyle}>Emoji *</label>
+              <label style={labelStyle}>Emoji (fallback when no image)</label>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 <input style={{ ...inputStyle, flex: 1 }} value={form.emoji} onChange={e => set_("emoji", e.target.value)} placeholder="☕" maxLength={4} />
                 <span style={{ fontSize: "2.2rem", lineHeight: 1 }}>{form.emoji}</span>
               </div>
             </div>
+
+            {/* Image Upload */}
+            <ImageUploadBox
+              previewUrl={previewUrl}
+              onFileSelected={processFile}
+              onRemove={handleRemoveImage}
+              uploadProgress={uploadProgress}
+              uploadError={uploadError}
+              isDragging={isDragging}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            />
 
             {/* Tag */}
             <div>
@@ -259,7 +471,7 @@ function ItemModal({ item, onClose, onSaved }) {
                 fontWeight: 700, fontSize: "0.9rem", cursor: saving ? "not-allowed" : "pointer",
                 transition: "background 0.2s",
               }}>
-                {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Item"}
+                {saving ? (uploadProgress !== null ? `Uploading… ${uploadProgress}%` : "Saving…") : isEdit ? "Save Changes" : "Add Item"}
               </button>
             </div>
           </div>
@@ -274,7 +486,7 @@ function ItemModal({ item, onClose, onSaved }) {
           <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "#7A6E65", marginBottom: 4 }}>
             Live Preview
           </p>
-          <CardPreview form={form} />
+          <CardPreview form={form} imageUrl={imageRemoved ? "" : previewUrl} />
         </div>
       </div>
     </div>
@@ -323,12 +535,19 @@ function ItemRow({ item, onEdit, onDelete, onToggleAvailable, onToggleSpecial })
       {/* drag handle (visual) */}
       <span style={{ color: "#D5CBBF", fontSize: "1rem", cursor: "grab", flexShrink: 0 }}>⠿</span>
 
-      {/* emoji circle */}
+      {/* image/emoji circle */}
       <div style={{
         width: 52, height: 52, borderRadius: "50%",
         background: bg, display: "flex", alignItems: "center",
         justifyContent: "center", fontSize: "1.5rem", flexShrink: 0,
-      }}>{item.emoji}</div>
+        overflow: "hidden",
+      }}>
+        {item.imageUrl
+          /* eslint-disable-next-line @next/next/no-img-element */
+          ? <img src={item.imageUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : item.emoji
+        }
+      </div>
 
       {/* info */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -423,7 +642,7 @@ export default function MenuAdminPage() {
         const seed = {};
         DEFAULT_ITEMS.forEach((item) => {
           const { id, ...rest } = item;
-          seed[id] = { ...rest, available: true };
+          seed[id] = { ...rest, available: true, imageUrl: "" };
         });
         await set(menuRef, seed);
         setSeeded(true);

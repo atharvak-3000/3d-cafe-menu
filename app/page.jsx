@@ -36,6 +36,10 @@ const KEYFRAMES = `
   0%   { transform: translateX(-150%) skewX(-20deg); }
   100% { transform: translateX(250%) skewX(-20deg); }
 }
+@keyframes imgShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 @keyframes dropIn {
   0%   { opacity: 0; transform: scale(0.7) translateY(-40px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -53,7 +57,7 @@ function SkeletonCard() {
       background: "#FDFAF5", borderRadius: 32, overflow: "hidden",
       boxShadow: "0 2px 8px rgba(44,24,16,0.06)", animation: "skeletonPulse 1.4s ease-in-out infinite",
     }}>
-      <div style={{ height: 200, background: "#EDE8E0" }} />
+      <div style={{ height: 180, background: "#EDE8E0" }} />
       <div style={{ padding: "24px 24px 32px" }}>
         <div style={{ height: 10, width: "40%", background: "#EDE8E0", borderRadius: 6, marginBottom: 12 }} />
         <div style={{ height: 22, width: "80%", background: "#EDE8E0", borderRadius: 6, marginBottom: 8 }} />
@@ -62,6 +66,102 @@ function SkeletonCard() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ height: 28, width: 60, background: "#EDE8E0", borderRadius: 6 }} />
           <div style={{ height: 42, width: 42, borderRadius: "50%", background: "#EDE8E0" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Menu Card (per-card image-loaded state) ──────────────────────────────── */
+function MenuCard({ item, inCart, onAdd }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
+  const catBg = CATEGORY_COLORS[item.category] || "#E8D5A3";
+
+  return (
+    <div
+      className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
+    >
+      {/* shimmer sweep overlay – plays over both image and emoji on card hover */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]" />
+
+      {/* ── Image / Emoji area ────────────────────────────────────────────── */}
+      <div
+        className="relative overflow-hidden z-10"
+        style={{ height: 180, backgroundColor: catBg }}
+      >
+        {hasImage ? (
+          <>
+            {/* Loading skeleton shimmer — hides once image loads */}
+            {!imgLoaded && (
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.15) 50%, transparent 75%)",
+                backgroundSize: "200% 100%",
+                animation: "imgShimmer 1.5s infinite",
+              }} />
+            )}
+
+            {/* Real image — fades in on load */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.imageUrl}
+              alt={item.name}
+              onLoad={() => setImgLoaded(true)}
+              style={{
+                width: "100%", height: "100%",
+                objectFit: "cover",
+                display: "block",
+                opacity: imgLoaded ? 1 : 0,
+                transition: "opacity 0.3s ease",
+                transform: "scale(1)",
+              }}
+              className="group-hover:[transform:scale(1.08)] transition-transform duration-500"
+            />
+
+            {/* Subtle bottom gradient so card body text reads cleanly below */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0, height: 48,
+              background: "linear-gradient(to top, rgba(44,24,16,0.3), transparent)",
+              pointerEvents: "none",
+            }} />
+          </>
+        ) : (
+          /* ── Emoji fallback – 100% unchanged behaviour ── */
+          <span className="text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            {item.emoji}
+          </span>
+        )}
+
+        {/* Chef's Pick badge */}
+        {item.special && (
+          <span className="absolute top-4 right-4 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10">
+            Chef&apos;s Pick
+          </span>
+        )}
+      </div>
+
+      {/* ── Card body ─────────────────────────────────────────────────────── */}
+      <div className="p-6 pb-8 relative z-10 bg-[#FDFAF5]">
+        <p className="text-[#C9A84C] text-[0.75rem] font-bold uppercase tracking-widest mb-2">{item.tag}</p>
+        <h3 className="text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-2 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">
+          {item.name}
+        </h3>
+        <p className="text-[#7A6E65] text-sm mb-6 min-h-[40px] leading-relaxed">{item.desc}</p>
+
+        <div className="flex justify-between items-end mt-auto">
+          <span className="text-[1.8rem] font-bold font-[family-name:var(--font-cormorant)]">₹{item.price}</span>
+          <div className="relative">
+            {inCart && (
+              <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] rounded-full z-20 ring-2 ring-[#FDFAF5]"
+                style={{ background: "#8A9E8A" }} />
+            )}
+            <button
+              onClick={() => onAdd(item)}
+              className="w-[42px] h-[42px] rounded-full bg-[#F7F2EA] flex items-center justify-center text-xl text-[#2C1810] shadow-sm group-hover:rotate-90 group-hover:bg-[#C9A84C] group-hover:text-white transition-all duration-300 border border-[#7A6E65]/10"
+              aria-label={`Add ${item.name} to cart`}
+            >+</button>
+          </div>
         </div>
       </div>
     </div>
@@ -297,46 +397,12 @@ export default function CustomerMenu() {
             : filteredItems.map((item) => {
                 const inCart = cart.find((c) => c.id === item.id);
                 return (
-                  <div key={item.id || item.firebaseKey}
-                    className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.02] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
-                  >
-                    <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]" />
-
-                    <div className="h-[200px] flex items-center justify-center relative overflow-hidden z-10"
-                      style={{ backgroundColor: CATEGORY_COLORS[item.category] }}>
-                      <span className="text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">
-                        {item.emoji}
-                      </span>
-                      {item.special && (
-                        <span className="absolute top-4 right-4 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          Chef&apos;s Pick
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-6 pb-8 relative z-10 bg-[#FDFAF5]">
-                      <p className="text-[#C9A84C] text-[0.75rem] font-bold uppercase tracking-widest mb-2">{item.tag}</p>
-                      <h3 className="text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-2 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">
-                        {item.name}
-                      </h3>
-                      <p className="text-[#7A6E65] text-sm mb-6 min-h-[40px] leading-relaxed">{item.desc}</p>
-
-                      <div className="flex justify-between items-end mt-auto">
-                        <span className="text-[1.8rem] font-bold font-[family-name:var(--font-cormorant)]">₹{item.price}</span>
-                        <div className="relative">
-                          {inCart && (
-                            <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] rounded-full z-20 ring-2 ring-[#FDFAF5]"
-                              style={{ background: "#8A9E8A" }} />
-                          )}
-                          <button
-                            onClick={() => addToCart(item)}
-                            className="w-[42px] h-[42px] rounded-full bg-[#F7F2EA] flex items-center justify-center text-xl text-[#2C1810] shadow-sm group-hover:rotate-90 group-hover:bg-[#C9A84C] group-hover:text-white transition-all duration-300 border border-[#7A6E65]/10"
-                            aria-label={`Add ${item.name} to cart`}
-                          >+</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <MenuCard
+                    key={item.id || item.firebaseKey}
+                    item={item}
+                    inCart={!!inCart}
+                    onAdd={addToCart}
+                  />
                 );
               })
           }
@@ -373,8 +439,11 @@ export default function CustomerMenu() {
             <ul className="space-y-6">
               {cart.map((item) => (
                 <li key={item.id} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-[#F7F2EA] shadow-sm">
-                  <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: CATEGORY_COLORS[item.category] }}>
-                    {item.emoji}
+                  <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl overflow-hidden" style={{ backgroundColor: CATEGORY_COLORS[item.category] }}>
+                    {item.imageUrl
+                      ? <img src={item.imageUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : item.emoji
+                    }
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-[#2C1810] leading-tight">{item.name}</h4>
