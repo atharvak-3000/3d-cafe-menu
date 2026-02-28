@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import PinPad from "@/components/PinPad";
 import { db } from "@/lib/firebase";
 import { ref, onValue, update } from "firebase/database";
+import { CATEGORY_COLORS } from "@/lib/menuItems";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const KITCHEN_PIN = process.env.NEXT_PUBLIC_KITCHEN_PIN || "5678";
@@ -107,18 +108,23 @@ function Ticket({ order, onAdvance }) {
 
       {/* Items */}
       <ul className="px-4 py-3 flex-1 space-y-3">
-        {(order.items || []).map((item, i) => (
-          <li key={i} className="flex items-center gap-3">
-            <span
-              className="font-mono font-bold tabular-nums text-lg shrink-0"
-              style={{ color: "#7BC98A", minWidth: "2rem" }}
-            >
-              ×{item.qty}
-            </span>
-            <span className="text-xl shrink-0">{item.emoji}</span>
-            <span className="font-mono text-sm text-[#C8DCC8]/80 leading-tight">{item.name}</span>
-          </li>
-        ))}
+        {(order.items || []).map((item, i) => {
+          const catBg = CATEGORY_COLORS[item.category] || "#E8D5A3";
+          const hasImg = item.imageUrl && item.imageUrl.trim() !== "";
+          return (
+            <li key={i} className="flex items-center gap-3">
+              <span className="font-mono font-bold tabular-nums text-lg shrink-0" style={{ color: "#7BC98A", minWidth: "2rem" }}>×{item.qty}</span>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: catBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                {hasImg
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  ? <img src={item.imageUrl} alt={item.name} style={{ height: "85%", width: "auto", maxWidth: "85%", objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 1px 3px rgba(44,24,16,0.15))" }} />
+                  : <span className="text-xl">{item.emoji}</span>
+                }
+              </div>
+              <span className="font-mono text-sm text-[#C8DCC8]/80 leading-tight">{item.name}</span>
+            </li>
+          );
+        })}
       </ul>
 
       {/* Note */}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import PinPad from "@/components/PinPad";
 import { db } from "@/lib/firebase";
 import { ref, onValue, update } from "firebase/database";
+import { CATEGORY_COLORS } from "@/lib/menuItems";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const CASHIER_PIN = process.env.NEXT_PUBLIC_CASHIER_PIN || "1234";
@@ -81,16 +82,26 @@ function OrderCard({ order, onAdvance }) {
 
       {/* Items */}
       <ul className="px-5 space-y-2 flex-1">
-        {(order.items || []).map((item, i) => (
-          <li key={i} className="flex items-center gap-2 text-sm text-[#E8DDD0]/80">
-            <span className="text-base">{item.emoji}</span>
-            <span className="flex-1 leading-tight">{item.name}</span>
-            <span className="text-[#E8DDD0]/40">×{item.qty}</span>
-            <span className="text-[#C9A84C] font-semibold tabular-nums">
-              ₹{item.price * item.qty}
-            </span>
-          </li>
-        ))}
+        {(order.items || []).map((item, i) => {
+          const catBg = CATEGORY_COLORS[item.category] || "#E8D5A3";
+          const hasImg = item.imageUrl && item.imageUrl.trim() !== "";
+          return (
+            <li key={i} className="flex items-center gap-2 text-sm text-[#E8DDD0]/80">
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: catBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                {hasImg
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  ? <img src={item.imageUrl} alt={item.name} style={{ height: "85%", width: "auto", maxWidth: "85%", objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 1px 3px rgba(44,24,16,0.15))" }} />
+                  : <span style={{ fontSize: "1rem" }}>{item.emoji}</span>
+                }
+              </div>
+              <span className="flex-1 leading-tight">{item.name}</span>
+              <span className="text-[#E8DDD0]/40">×{item.qty}</span>
+              <span className="text-[#C9A84C] font-semibold tabular-nums">
+                ₹{item.price * item.qty}
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
       {/* Note */}

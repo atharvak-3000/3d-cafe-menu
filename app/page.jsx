@@ -36,10 +36,6 @@ const KEYFRAMES = `
   0%   { transform: translateX(-150%) skewX(-20deg); }
   100% { transform: translateX(250%) skewX(-20deg); }
 }
-@keyframes imgShimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
 @keyframes dropIn {
   0%   { opacity: 0; transform: scale(0.7) translateY(-40px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -72,68 +68,56 @@ function SkeletonCard() {
   );
 }
 
-/* ─── Menu Card (per-card image-loaded state) ──────────────────────────────── */
+/* ─── Shared image display styles ─────────────────────────────────────────── */
+const IMG_STYLE = {
+  height: "72%",
+  width: "auto",
+  maxWidth: "72%",
+  objectFit: "contain",
+  display: "block",
+  mixBlendMode: "multiply",
+  filter: "drop-shadow(0px 10px 18px rgba(44,24,16,0.22))",
+  transition: "transform 0.45s cubic-bezier(0.34,1.56,0.64,1), filter 0.3s ease",
+};
+const IMG_HOVER = {
+  transform: "scale(1.18) translateY(-5px)",
+  filter: "drop-shadow(0px 18px 28px rgba(44,24,16,0.35))",
+};
+const IMG_RESET = {
+  transform: "",
+  filter: "drop-shadow(0px 10px 18px rgba(44,24,16,0.22))",
+};
+
+/* ─── Menu Card ────────────────────────────────────────────────────────────── */
 function MenuCard({ item, inCart, onAdd }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
   const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
-  const catBg = CATEGORY_COLORS[item.category] || "#E8D5A3";
+  const catBg    = CATEGORY_COLORS[item.category] || "#E8D5A3";
 
   return (
-    <div
-      className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
-    >
-      {/* shimmer sweep overlay – plays over both image and emoji on card hover */}
+    <div className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative">
+      {/* shimmer sweep */}
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]" />
 
-      {/* ── Image / Emoji area ────────────────────────────────────────────── */}
+      {/* ── Image / Emoji area ─────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden z-10"
-        style={{ height: 180, backgroundColor: catBg }}
+        className="relative z-10 overflow-hidden"
+        style={{ height: 180, backgroundColor: catBg, display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         {hasImage ? (
-          <>
-            {/* Loading skeleton shimmer — hides once image loads */}
-            {!imgLoaded && (
-              <div style={{
-                position: "absolute", inset: 0,
-                background: "linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.15) 50%, transparent 75%)",
-                backgroundSize: "200% 100%",
-                animation: "imgShimmer 1.5s infinite",
-              }} />
-            )}
-
-            {/* Real image — fades in on load */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              onLoad={() => setImgLoaded(true)}
-              style={{
-                width: "100%", height: "100%",
-                objectFit: "cover",
-                display: "block",
-                opacity: imgLoaded ? 1 : 0,
-                transition: "opacity 0.3s ease",
-                transform: "scale(1)",
-              }}
-              className="group-hover:[transform:scale(1.08)] transition-transform duration-500"
-            />
-
-            {/* Subtle bottom gradient so card body text reads cleanly below */}
-            <div style={{
-              position: "absolute", bottom: 0, left: 0, right: 0, height: 48,
-              background: "linear-gradient(to top, rgba(44,24,16,0.3), transparent)",
-              pointerEvents: "none",
-            }} />
-          </>
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            style={IMG_STYLE}
+            onMouseEnter={(e) => Object.assign(e.currentTarget.style, IMG_HOVER)}
+            onMouseLeave={(e) => Object.assign(e.currentTarget.style, IMG_RESET)}
+          />
         ) : (
-          /* ── Emoji fallback – 100% unchanged behaviour ── */
-          <span className="text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <span className="text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">
             {item.emoji}
           </span>
         )}
 
-        {/* Chef's Pick badge */}
         {item.special && (
           <span className="absolute top-4 right-4 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10">
             Chef&apos;s Pick
@@ -141,7 +125,7 @@ function MenuCard({ item, inCart, onAdd }) {
         )}
       </div>
 
-      {/* ── Card body ─────────────────────────────────────────────────────── */}
+      {/* ── Card body ──────────────────────────────────────────────────────── */}
       <div className="p-6 pb-8 relative z-10 bg-[#FDFAF5]">
         <p className="text-[#C9A84C] text-[0.75rem] font-bold uppercase tracking-widest mb-2">{item.tag}</p>
         <h3 className="text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-2 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">
@@ -168,6 +152,22 @@ function MenuCard({ item, inCart, onAdd }) {
   );
 }
 
+/* ─── Small image helper for cart / other small contexts ──────────────────── */
+function ItemThumb({ item, size = 44, imgPct = "80%" }) {
+  const catBg = CATEGORY_COLORS[item.category] || "#E8D5A3";
+  const hasImg = item.imageUrl && item.imageUrl.trim() !== "";
+  return (
+    <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), background: catBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+      {hasImg ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={item.imageUrl} alt={item.name} style={{ height: imgPct, width: "auto", maxWidth: imgPct, objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 2px 6px rgba(44,24,16,0.2))" }} />
+      ) : (
+        <span style={{ fontSize: size * 0.45 }}>{item.emoji}</span>
+      )}
+    </div>
+  );
+}
+
 export default function CustomerMenu() {
   const [tableNumber, setTableNumber]   = useState("");
   const [tableEntered, setTableEntered] = useState(false);
@@ -182,16 +182,15 @@ export default function CustomerMenu() {
   const [menuItems, setMenuItems] = useState([]);
   const [menuLoading, setMenuLoading] = useState(true);
 
-  /* ── Feature 1: toast stack ─────────────────────────────────────────────── */
+  /* ── Toast stack ─────────────────────────────────────────────────────────── */
   const [toasts, setToasts] = useState([]);
 
-  /* ── Feature 2: cart glow ───────────────────────────────────────────────── */
+  /* ── Cart glow ───────────────────────────────────────────────────────────── */
   const [cartBumping, setCartBumping] = useState(false);
   const prevCartCount = useRef(0);
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  /* ── Load menu from Firebase (with fallback) ─────────────────────────────── */
   useEffect(() => {
     const menuRef = ref(db, "menu");
     const unsub = onValue(menuRef, (snap) => {
@@ -199,21 +198,16 @@ export default function CustomerMenu() {
       if (data) {
         const arr = Object.entries(data)
           .map(([key, val]) => ({ ...val, id: key, firebaseKey: key }))
-          .filter(item => item.available !== false); // hide unavailable
+          .filter(item => item.available !== false);
         setMenuItems(arr.length ? arr : DEFAULT_ITEMS);
       } else {
         setMenuItems(DEFAULT_ITEMS);
       }
       setMenuLoading(false);
-    }, () => {
-      // error fallback
-      setMenuItems(DEFAULT_ITEMS);
-      setMenuLoading(false);
-    });
+    }, () => { setMenuItems(DEFAULT_ITEMS); setMenuLoading(false); });
     return () => unsub();
   }, []);
 
-  /* detect when an item is first added → trigger bump */
   const totalItems = cart.reduce((s, i) => s + i.qty, 0);
   useEffect(() => {
     if (totalItems > prevCartCount.current) {
@@ -225,13 +219,10 @@ export default function CustomerMenu() {
     prevCartCount.current = totalItems;
   }, [totalItems]);
 
-  /* ── Helpers ─────────────────────────────────────────────────────────────── */
   const showToast = (item) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, emoji: item.emoji, name: item.name, category: item.category }].slice(-3));
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 2500);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2500);
   };
 
   const handleTableSubmit = (e) => {
@@ -241,17 +232,15 @@ export default function CustomerMenu() {
 
   const addToCart = (item) => {
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+      const ex = prev.find((i) => i.id === item.id);
+      if (ex) return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, { ...item, qty: 1 }];
     });
     showToast(item);
   };
 
   const updateQty = (id, delta) => {
-    setCart((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i)).filter((i) => i.qty > 0)
-    );
+    setCart((prev) => prev.map((i) => i.id === id ? { ...i, qty: i.qty + delta } : i).filter((i) => i.qty > 0));
   };
 
   const placeOrder = async () => {
@@ -261,7 +250,9 @@ export default function CustomerMenu() {
       const ordersRef = fbRef(db, "orders");
       const orderData = {
         table: tableNumber,
-        items: cart.map(({ name, emoji, qty, price, id }) => ({ name, emoji, qty, price, id })),
+        items: cart.map(({ name, emoji, imageUrl, category, qty, price, id }) => ({
+          name, emoji, imageUrl: imageUrl || "", category: category || "", qty, price, id,
+        })),
         total: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
         status: "new",
         note: orderNote,
@@ -290,8 +281,8 @@ export default function CustomerMenu() {
 
   const cartTotal     = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const cartHasItems  = cartItemCount > 0;
 
-  const cartHasItems = cartItemCount > 0;
   const cartBtnStyle = {
     ...(cartHasItems ? {
       animation: `cartGlow 2s ease-in-out infinite${cartBumping ? ", cartBump 0.3s ease" : ""}`,
@@ -305,7 +296,7 @@ export default function CustomerMenu() {
 
   if (!isMounted) return null;
 
-  /* ═══════════════════════ TABLE ENTRY SCREEN ═══════════════════════════════ */
+  /* ═══════════════════ TABLE ENTRY SCREEN ═══════════════════════════════════ */
   if (!tableEntered) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#F7F2EA] p-4 text-[#2C1810]">
@@ -315,16 +306,10 @@ export default function CustomerMenu() {
           <h2 className="text-3xl italic text-[#C9A84C] mb-8">Lumière Café</h2>
           <form onSubmit={handleTableSubmit} className="space-y-6">
             <div>
-              <label htmlFor="table" className="block text-xl mb-3 text-[#7A6E65]">
-                Please enter your table number
-              </label>
-              <input
-                id="table" type="number" value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                required
-                className="w-full text-center text-4xl p-4 bg-transparent border-b-2 border-[#C9A84C] focus:outline-none focus:border-[#2C1810] transition-colors"
-                placeholder="0" min="1" max="99"
-              />
+              <label htmlFor="table" className="block text-xl mb-3 text-[#7A6E65]">Please enter your table number</label>
+              <input id="table" type="number" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)}
+                required className="w-full text-center text-4xl p-4 bg-transparent border-b-2 border-[#C9A84C] focus:outline-none focus:border-[#2C1810] transition-colors"
+                placeholder="0" min="1" max="99" />
             </div>
             <button type="submit" className="w-full bg-[#C9A84C] text-[#FDFAF5] py-4 rounded-full text-xl font-bold hover:bg-[#b09038] transition-colors shadow-lg shadow-[#C9A84C]/30">
               View Menu
@@ -335,12 +320,12 @@ export default function CustomerMenu() {
     );
   }
 
-  /* ═══════════════════════ MAIN MENU SCREEN ═════════════════════════════════ */
+  /* ═══════════════════ MAIN MENU SCREEN ═════════════════════════════════════ */
   return (
     <div className="min-h-screen bg-[#F7F2EA] text-[#2C1810] font-[family-name:var(--font-dm-sans)] pb-24">
       <style>{KEYFRAMES}</style>
 
-      {/* ── HEADER ───────────────────────────────────────────────────────────── */}
+      {/* HEADER */}
       <header className="sticky top-0 z-40 bg-[#F7F2EA]/80 backdrop-blur-md border-b border-[#7A6E65]/10">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-3xl font-[family-name:var(--font-cormorant)] font-bold">
@@ -350,11 +335,9 @@ export default function CustomerMenu() {
             <div className="bg-[#FDFAF5] px-4 py-2 rounded-full text-sm font-semibold shadow-sm border border-[#7A6E65]/10">
               Table {tableNumber}
             </div>
-            <button
-              onClick={() => setIsCartOpen(true)}
+            <button onClick={() => setIsCartOpen(true)}
               className="relative p-3 bg-[#FDFAF5] rounded-full shadow-sm hover:shadow-md transition-shadow border border-[#7A6E65]/10"
-              style={cartBtnStyle}
-            >
+              style={cartBtnStyle}>
               🛒
               {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-1 text-xs h-6 w-6 rounded-full flex items-center justify-center" style={badgeStyle}>
@@ -366,9 +349,8 @@ export default function CustomerMenu() {
         </div>
       </header>
 
-      {/* ── MAIN ─────────────────────────────────────────────────────────────── */}
+      {/* MAIN */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
-        {/* HERO */}
         <div className="text-center mb-16 px-4">
           <h2 className="text-[clamp(3rem,6vw,6rem)] leading-none font-bold font-[family-name:var(--font-cormorant)] mb-6 text-[#2C1810]">
             A Menu Made with{" "}<span className="italic text-[#7A6E65]">Love</span>
@@ -379,8 +361,7 @@ export default function CustomerMenu() {
         {/* CATEGORY FILTERS */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           {["All", "☕ Coffee", "🍵 Tea", "🥐 Food", "🍰 Sweet"].map((cat) => (
-            <button
-              key={cat} onClick={() => setActiveCategory(cat)}
+            <button key={cat} onClick={() => setActiveCategory(cat)}
               className={`px-6 py-3 rounded-full text-lg transition-all duration-300 ${
                 activeCategory === cat
                   ? "bg-[#2C1810] text-[#FDFAF5] shadow-lg shadow-[#2C1810]/20 font-bold"
@@ -394,22 +375,19 @@ export default function CustomerMenu() {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-8">
           {menuLoading
             ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            : filteredItems.map((item) => {
-                const inCart = cart.find((c) => c.id === item.id);
-                return (
-                  <MenuCard
-                    key={item.id || item.firebaseKey}
-                    item={item}
-                    inCart={!!inCart}
-                    onAdd={addToCart}
-                  />
-                );
-              })
+            : filteredItems.map((item) => (
+                <MenuCard
+                  key={item.id || item.firebaseKey}
+                  item={item}
+                  inCart={!!cart.find((c) => c.id === item.id)}
+                  onAdd={addToCart}
+                />
+              ))
           }
         </div>
       </main>
 
-      {/* ── TOAST OVERLAY ────────────────────────────────────────────────────── */}
+      {/* TOAST OVERLAY */}
       {toasts.length > 0 && (
         <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 500, display: "flex", flexDirection: "column-reverse", alignItems: "center", gap: 8, pointerEvents: "none" }}>
           {toasts.map((toast) => (
@@ -423,7 +401,7 @@ export default function CustomerMenu() {
         </div>
       )}
 
-      {/* ── CART PANEL ───────────────────────────────────────────────────────── */}
+      {/* CART PANEL */}
       <div className={`fixed inset-y-0 right-0 w-full md:w-[380px] bg-[#FDFAF5] shadow-2xl z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isCartOpen ? "translate-x-0" : "translate-x-full"}`}>
         <div className="bg-[#2C1810] text-[#FDFAF5] p-6 flex justify-between items-center">
           <h2 className="text-2xl font-bold font-[family-name:var(--font-cormorant)]">Your Order</h2>
@@ -436,23 +414,18 @@ export default function CustomerMenu() {
               <p className="text-xl font-[family-name:var(--font-cormorant)] italic pb-20">Your cart awaits your cravings...</p>
             </div>
           ) : (
-            <ul className="space-y-6">
+            <ul className="space-y-4">
               {cart.map((item) => (
-                <li key={item.id} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-[#F7F2EA] shadow-sm">
-                  <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl overflow-hidden" style={{ backgroundColor: CATEGORY_COLORS[item.category] }}>
-                    {item.imageUrl
-                      ? <img src={item.imageUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : item.emoji
-                    }
-                  </div>
+                <li key={item.id} className="flex gap-3 items-center bg-white p-3 rounded-2xl border border-[#F7F2EA] shadow-sm">
+                  <ItemThumb item={item} size={44} imgPct="80%" />
                   <div className="flex-1">
-                    <h4 className="font-bold text-[#2C1810] leading-tight">{item.name}</h4>
-                    <span className="text-[#7A6E65] font-bold">₹{item.price}</span>
+                    <h4 className="font-bold text-[#2C1810] leading-tight text-sm">{item.name}</h4>
+                    <span className="text-[#7A6E65] font-bold text-sm">₹{item.price}</span>
                   </div>
-                  <div className="flex items-center gap-3 bg-[#F7F2EA] rounded-full px-2 py-1">
-                    <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full transition-colors">-</button>
-                    <span className="w-4 text-center font-bold text-[#2C1810]">{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full transition-colors">+</button>
+                  <div className="flex items-center gap-2 bg-[#F7F2EA] rounded-full px-2 py-1">
+                    <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full transition-colors">-</button>
+                    <span className="w-4 text-center font-bold text-[#2C1810] text-sm">{item.qty}</span>
+                    <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 flex items-center justify-center text-[#2C1810] font-bold hover:bg-[#FDFAF5] rounded-full transition-colors">+</button>
                   </div>
                 </li>
               ))}
@@ -473,7 +446,7 @@ export default function CustomerMenu() {
 
       {isCartOpen && <div className="fixed inset-0 bg-[#2C1810]/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setIsCartOpen(false)} />}
 
-      {/* ── SUCCESS MODAL ─────────────────────────────────────────────────────── */}
+      {/* SUCCESS MODAL */}
       {orderSuccess && (
         <div className="fixed inset-0 bg-[#2C1810]/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-[#FDFAF5] rounded-[2rem] p-10 max-w-sm w-full text-center shadow-2xl animate-[dropIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)]">
