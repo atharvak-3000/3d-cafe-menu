@@ -16,9 +16,13 @@ const KEYFRAMES = `
 }
 @keyframes badgePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
 @keyframes cartBump   { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
-@keyframes shimmer    { 0%{transform:translateX(-150%) skewX(-20deg)} 100%{transform:translateX(250%) skewX(-20deg)} }
+@keyframes shimmer    {
+  0%   { background-position: -200% 0; transform: translateX(-150%) skewX(-20deg); }
+  100% { background-position:  200% 0; transform: translateX(250%)  skewX(-20deg); }
+}
 @keyframes dropIn     { 0%{opacity:0;transform:scale(.7) translateY(-40px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
 @keyframes skelPulse  { 0%,100%{opacity:.5} 50%{opacity:1} }
+@keyframes popularityFill { from { width: 0%; } to { width: 100%; } }
 `;
 
 function SkeletonCard() {
@@ -58,7 +62,7 @@ function getCloudinaryUrl(url, category) {
   );
 }
 
-function MenuCard({ item, inCart, onAdd }) {
+function MenuCard({ item, inCart, onAdd, isMostOrdered }) {
   const hasImg = !!(item.imageUrl?.trim());
   const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
 
@@ -84,8 +88,8 @@ function MenuCard({ item, inCart, onAdd }) {
           alignItems: "center",
           justifyContent: "center",
           position: "relative",
-          isolation: "isolate",           /* CRITICAL: gives blend mode its own context */
-          borderRadius: "22px 22px 0 0",  /* top corners of card */
+          isolation: "isolate",
+          borderRadius: "22px 22px 0 0",
         }}
       >
         {hasImg ? (
@@ -99,7 +103,7 @@ function MenuCard({ item, inCart, onAdd }) {
               height: "86%",
               objectFit: "contain",
               mixBlendMode: "multiply",
-              WebkitMixBlendMode: "multiply",  /* Safari */
+              WebkitMixBlendMode: "multiply",
               display: "block",
               position: "relative",
               zIndex: 2,
@@ -127,6 +131,17 @@ function MenuCard({ item, inCart, onAdd }) {
             Chef&apos;s Pick
           </span>
         )}
+
+        {/* Most Ordered badge on matching grid card */}
+        {isMostOrdered && (
+          <span style={{
+            position: "absolute", bottom: 0, left: 0,
+            background: "rgba(232,93,32,0.92)",
+            color: "#fff", fontSize: "0.58rem", fontWeight: 700,
+            padding: "3px 10px", borderRadius: "0 8px 0 0", zIndex: 10,
+            letterSpacing: "0.05em",
+          }}>🔥 Most Ordered</span>
+        )}
       </div>
 
       {/* CARD BODY */}
@@ -147,6 +162,184 @@ function MenuCard({ item, inCart, onAdd }) {
               aria-label={`Add ${item.name}`}
             >+</button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Most Ordered Hero Card ──────────────────────────────────────────────── */
+function MostOrderedCard({ item, inCart, onAdd }) {
+  const [added, setAdded]     = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
+  const hasImg = !!(item.imageUrl?.trim());
+  const imgSrc = hasImg ? getCloudinaryUrl(item.imageUrl, item.category) : "";
+
+  const handleAdd = () => {
+    onAdd(item);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  };
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        background: "linear-gradient(135deg, #2C1810 0%, #4A2810 100%)",
+        borderRadius: 24,
+        border: `1.5px solid ${hovered ? "rgba(201,168,76,0.7)" : "rgba(201,168,76,0.35)"}`,
+        boxShadow: hovered
+          ? "0 24px 80px rgba(44,24,16,0.4), 0 0 0 1px rgba(201,168,76,0.15)"
+          : "0 16px 60px rgba(44,24,16,0.25), 0 0 0 1px rgba(201,168,76,0.1)",
+        overflow: "hidden",
+        transform: hovered ? "translateY(-6px)" : "translateY(0)",
+        transition: "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.35s ease",
+        flexWrap: "wrap",
+      }}
+    >
+      {/* LEFT — image */}
+      <div style={{
+        position: "relative",
+        width: "min(200px, 100%)",
+        minHeight: 200,
+        background: catBg,
+        backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.15) 0%, transparent 70%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        isolation: "isolate",
+        overflow: "hidden",
+        flexShrink: 0,
+      }}>
+        {/* dark overlay on top of category color */}
+        <div style={{ position:"absolute",inset:0,background:"rgba(44,24,16,0.22)",zIndex:1,pointerEvents:"none" }}/>
+
+        {/* 🔥 MOST ORDERED badge */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, zIndex: 10,
+          background: "linear-gradient(135deg, #C9784C, #E85D20)",
+          color: "#fff",
+          fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.15em",
+          padding: "6px 14px", borderRadius: "0 0 14px 0",
+          boxShadow: "0 4px 12px rgba(232,93,32,0.4)",
+          whiteSpace: "nowrap",
+        }}>🔥 MOST ORDERED</div>
+
+        {/* order count badge */}
+        <div style={{
+          position: "absolute", top: 8, right: 8, zIndex: 10,
+          background: "rgba(201,168,76,0.15)",
+          border: "1px solid rgba(201,168,76,0.3)",
+          color: "#C9A84C", fontSize: "0.7rem", fontWeight: 600,
+          padding: "4px 10px", borderRadius: 50,
+          backdropFilter: "blur(4px)",
+        }}>{item.totalOrdered} ordered</div>
+
+        {hasImg ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={imgSrc}
+            alt={item.name}
+            className="menu-image"
+            style={{
+              width: "80%", height: "80%", objectFit: "contain",
+              mixBlendMode: "multiply", WebkitMixBlendMode: "multiply",
+              position: "relative", zIndex: 2,
+              filter: "drop-shadow(0 10px 24px rgba(44,24,16,0.25))",
+              transform: hovered ? "scale(1.06)" : "scale(1)",
+              transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+              backgroundColor: "transparent",
+            }}
+          />
+        ) : (
+          <span style={{
+            fontSize: "6rem", zIndex: 2, position: "relative",
+            transform: hovered ? "scale(1.1)" : "scale(1)",
+            transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+            display: "inline-block",
+          }}>{item.emoji}</span>
+        )}
+      </div>
+
+      {/* RIGHT — content */}
+      <div style={{
+        flex: 1,
+        padding: "clamp(18px,4vw,28px)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 10,
+        minWidth: 180,
+      }}>
+        {/* label */}
+        <p style={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.25em", color: "#C9A84C", margin: 0, textTransform: "uppercase" }}>
+          ✶ Today’s Crowd Favourite
+        </p>
+
+        {/* name */}
+        <h3 style={{
+          fontFamily: "Georgia, serif",
+          fontSize: "clamp(1.6rem,5vw,2.2rem)",
+          fontWeight: 300, color: "#F7F2EA",
+          lineHeight: 1.1, margin: 0,
+        }}>{item.name}</h3>
+
+        {/* category tag */}
+        <span style={{
+          alignSelf: "flex-start",
+          background: "rgba(201,168,76,0.1)",
+          border: "1px solid rgba(201,168,76,0.4)",
+          color: "#C9A84C",
+          fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.15em",
+          padding: "3px 10px", borderRadius: 50,
+        }}>{item.category}</span>
+
+        {/* description */}
+        {item.desc && (
+          <p style={{
+            fontSize: "0.85rem", color: "rgba(247,242,234,0.65)",
+            lineHeight: 1.65, margin: 0,
+            display: "-webkit-box", WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{item.desc}</p>
+        )}
+
+        {/* popularity bar */}
+        <div>
+          <p style={{ fontSize: "0.6rem", color: "rgba(247,242,234,0.35)", margin: "0 0 5px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Popularity</p>
+          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
+            <div style={{
+              height: "100%", borderRadius: 2,
+              background: "linear-gradient(90deg, #C9A84C, #E8D5A3)",
+              animation: "popularityFill 1s ease 0.3s both",
+            }}/>
+          </div>
+        </div>
+
+        {/* price + add button */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#F7F2EA" }}>
+            ₹{item.price}
+          </span>
+          <button
+            onClick={handleAdd}
+            style={{
+              width: 44, height: 44, borderRadius: "50%",
+              background: added ? "#8A9E8A" : "#C9A84C",
+              color: "#2C1810",
+              border: "none", cursor: "pointer", fontSize: added ? "1.1rem" : "1.5rem",
+              fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transform: hovered && !added ? "scale(1.08)" : "scale(1)",
+              transition: "background 0.25s ease, transform 0.25s ease",
+              boxShadow: "0 4px 16px rgba(201,168,76,0.35)",
+            }}
+            aria-label={`Add ${item.name}`}
+          >{added ? "✓" : "+"}</button>
         </div>
       </div>
     </div>
@@ -180,6 +373,7 @@ export default function CustomerMenu() {
   const [menuLoading, setMenuLoading]     = useState(true);
   const [toasts, setToasts]               = useState([]);
   const [cartBumping, setCartBumping]     = useState(false);
+  const [mostOrdered, setMostOrdered]     = useState(null);
   const prevCartCount                     = useRef(0);
 
   useEffect(()=>{ setIsMounted(true); },[]);
@@ -194,6 +388,57 @@ export default function CustomerMenu() {
       } else setMenuItems(DEFAULT_ITEMS);
       setMenuLoading(false);
     },()=>{ setMenuItems(DEFAULT_ITEMS); setMenuLoading(false); });
+    return ()=>unsub();
+  },[]);
+  // Subscribe to orders ? compute most-ordered item in real-time
+  useEffect(()=>{
+    const unsub = onValue(ref(db,"orders"),(snap)=>{
+      const data = snap.val();
+      if (!data) return;
+      const totalOrders = Object.keys(data).length;
+      if (totalOrders < 3) return;
+      const counts = {};
+      Object.values(data).forEach(order=>{
+        order.items?.forEach(item=>{
+          counts[item.name] = (counts[item.name]||0) + (item.qty||1);
+        });
+      });
+      const sorted = Object.entries(counts)
+        .sort((a,b)=> b[1]!==a[1] ? b[1]-a[1] : a[0].localeCompare(b[0]));
+      const [topName, topCount] = sorted[0] || [];
+      if (!topName || topCount < 3) return;
+      setMenuItems(prev=>{
+        const menuItem = prev.find(m=>m.name===topName);
+        if (menuItem) setMostOrdered({...menuItem, totalOrdered: topCount});
+        return prev;
+      });
+    });
+    return ()=>unsub();
+  },[]);
+
+  // Subscribe to orders → compute most-ordered item in real-time
+  useEffect(()=>{
+    const unsub = onValue(ref(db,"orders"),(snap)=>{
+      const data = snap.val();
+      if (!data) return;
+      const totalOrders = Object.keys(data).length;
+      if (totalOrders < 3) return;
+      const counts = {};
+      Object.values(data).forEach(order=>{
+        order.items?.forEach(item=>{
+          counts[item.name] = (counts[item.name]||0) + (item.qty||1);
+        });
+      });
+      const sorted = Object.entries(counts)
+        .sort((a,b)=> b[1]!==a[1] ? b[1]-a[1] : a[0].localeCompare(b[0]));
+      const [topName, topCount] = sorted[0] || [];
+      if (!topName || topCount < 3) return;
+      setMenuItems(prev=>{
+        const menuItem = prev.find(m=>m.name===topName);
+        if (menuItem) setMostOrdered({...menuItem, totalOrdered: topCount});
+        return prev;
+      });
+    });
     return ()=>unsub();
   },[]);
 
@@ -297,6 +542,28 @@ export default function CustomerMenu() {
           <div className="h-px w-20 bg-[#C9A84C] mx-auto" />
         </div>
 
+        {/* MOST ORDERED SECTION — only shown when data is available */}
+        {mostOrdered && (
+          <div style={{ maxWidth: 700, margin: "0 auto", marginBottom: 40, padding: "0 0" }}>
+            {/* divider label */}
+            <p style={{
+              textAlign: "center", fontSize: "0.65rem", color: "#7A6E65",
+              letterSpacing: "0.15em", textTransform: "uppercase",
+              marginBottom: 14, display: "flex", alignItems: "center",
+              justifyContent: "center", gap: 8,
+            }}>
+              <span style={{ color: "#C9A84C" }}>·</span>
+              Based on real orders
+              <span style={{ color: "#C9A84C" }}>·</span>
+            </p>
+            <MostOrderedCard
+              item={mostOrdered}
+              inCart={!!cart.find(c=>c.id===mostOrdered.id)}
+              onAdd={addToCart}
+            />
+          </div>
+        )}
+
         {/* CATEGORY TABS — horizontally scrollable on mobile */}
         <div className="flex gap-2 sm:gap-3 mb-8 sm:mb-12 overflow-x-auto scroll-hide pb-1">
           {TABS.map(cat=>(
@@ -314,7 +581,13 @@ export default function CustomerMenu() {
           {menuLoading
             ? Array.from({length:6}).map((_,i)=><SkeletonCard key={i}/>)
             : filteredItems.map(item=>(
-                <MenuCard key={item.id||item.firebaseKey} item={item} inCart={!!cart.find(c=>c.id===item.id)} onAdd={addToCart}/>
+                <MenuCard
+                  key={item.id||item.firebaseKey}
+                  item={item}
+                  inCart={!!cart.find(c=>c.id===item.id)}
+                  onAdd={addToCart}
+                  isMostOrdered={mostOrdered?.name===item.name}
+                />
               ))
           }
         </div>
