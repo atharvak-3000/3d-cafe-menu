@@ -30,6 +30,7 @@ body {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
+
   .scroll-hide::-webkit-scrollbar {
     display: none;
   }
@@ -44,14 +45,31 @@ body {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
   .table-scroll table {
     min-width: 500px;
   }
 }
 
+/* ── Menu image blend fix (Safari) ────────────── */
+img.menu-image {
+  mix-blend-mode: multiply;
+  -webkit-mix-blend-mode: multiply;
+  isolation: auto;
+  background-color: transparent !important;
+}
+
 /* ── Responsive grids ─────────────────────────── */
 @media (max-width: 640px) {
-  .kpi-grid          { grid-template-columns: repeat(2, 1fr) !important; }
-  .cat-overview-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .stats-bar-grid    { grid-template-columns: repeat(2, 1fr) !important; }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .cat-overview-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .stats-bar-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 }

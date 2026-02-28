@@ -37,31 +37,103 @@ function SkeletonCard() {
     </div>
   );
 }
-
-const IMG_S = { height:"72%",width:"auto",maxWidth:"72%",objectFit:"contain",display:"block",mixBlendMode:"multiply",filter:"drop-shadow(0px 10px 18px rgba(44,24,16,0.22))",transition:"transform 0.45s cubic-bezier(0.34,1.56,0.64,1),filter 0.3s ease" };
-const IMG_H = { transform:"scale(1.18) translateY(-5px)",filter:"drop-shadow(0px 18px 28px rgba(44,24,16,0.35))" };
-const IMG_R = { transform:"",filter:"drop-shadow(0px 10px 18px rgba(44,24,16,0.22))" };
+/* ─── Cloudinary URL helper ──────────────────────────────────────────────────
+   Injects e_background_removal + category colour so white bg is fully removed
+   even if the server-side transformation wasn't run at upload time.
+────────────────────────────────────────────────────────────────────────────── */
+const CAT_HEX = {
+  coffee: "E8D5A3",
+  tea:    "C8DCCA",
+  food:   "F0D5C5",
+  sweet:  "F0C8C8",
+};
+function getCloudinaryUrl(url, category) {
+  if (!url?.includes("cloudinary.com")) return url;
+  const hex = CAT_HEX[category] || "F7F2EA";
+  // Only inject if not already transformed
+  if (url.includes("/upload/e_background_removal")) return url;
+  return url.replace(
+    "/upload/",
+    `/upload/e_background_removal,b_rgb:${hex},c_pad,ar_1:1,w_500,q_auto,f_webp/`
+  );
+}
 
 function MenuCard({ item, inCart, onAdd }) {
   const hasImg = !!(item.imageUrl?.trim());
   const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
+
+  const imgSrc = hasImg ? getCloudinaryUrl(item.imageUrl, item.category) : "";
+
   return (
-    <div className="group bg-[#FDFAF5] rounded-[2rem] overflow-hidden shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative">
-      <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      <div className="relative z-10 overflow-hidden" style={{ height:"clamp(140px,25vw,180px)",backgroundColor:catBg,display:"flex",alignItems:"center",justifyContent:"center" }}>
+    /* IMPORTANT: no overflow-hidden on outer card — it breaks blend mode stacking context */
+    <div
+      className="group bg-[#FDFAF5] rounded-[2rem] shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
+      style={{ overflow: "visible" }}
+    >
+      {/* shimmer sweep */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite] pointer-events-none" />
+
+      {/* IMAGE AREA — isolation:isolate creates fresh blend-mode stacking context */}
+      <div
+        className="relative z-10 overflow-hidden"
+        style={{
+          height: "clamp(140px,25vw,180px)",
+          backgroundColor: catBg,
+          backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.2) 0%, transparent 70%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          isolation: "isolate",           /* CRITICAL: gives blend mode its own context */
+          borderRadius: "22px 22px 0 0",  /* top corners of card */
+        }}
+      >
         {hasImg ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={item.imageUrl} alt={item.name} style={IMG_S}
-            onMouseEnter={e=>Object.assign(e.currentTarget.style,IMG_H)}
-            onMouseLeave={e=>Object.assign(e.currentTarget.style,IMG_R)} />
+          <img
+            src={imgSrc}
+            alt={item.name}
+            className="menu-image"
+            style={{
+              width: "86%",
+              height: "86%",
+              objectFit: "contain",
+              mixBlendMode: "multiply",
+              WebkitMixBlendMode: "multiply",  /* Safari */
+              display: "block",
+              position: "relative",
+              zIndex: 2,
+              filter: "drop-shadow(0 10px 24px rgba(44,24,16,0.15))",
+              transition: "transform 0.45s cubic-bezier(0.34,1.56,0.64,1), filter 0.3s ease",
+              backgroundColor: "transparent",
+              border: "none",
+              outline: "none",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "scale(1.12) translateY(-4px)";
+              e.currentTarget.style.filter    = "drop-shadow(0 18px 36px rgba(44,24,16,0.28))";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "";
+              e.currentTarget.style.filter    = "drop-shadow(0 10px 24px rgba(44,24,16,0.15))";
+            }}
+          />
         ) : (
           <span className="text-[4.5rem] sm:text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">{item.emoji}</span>
         )}
+
         {item.special && (
-          <span className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-rose-500 text-white text-[0.6rem] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-lg z-10">Chef&apos;s Pick</span>
+          <span className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-rose-500 text-white text-[0.6rem] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
+            Chef&apos;s Pick
+          </span>
         )}
       </div>
-      <div className="p-4 sm:p-6 pb-6 sm:pb-8 relative z-10 bg-[#FDFAF5]">
+
+      {/* CARD BODY */}
+      <div
+        className="p-4 sm:p-6 pb-6 sm:pb-8 relative z-10 bg-[#FDFAF5]"
+        style={{ borderRadius: "0 0 22px 22px" }}
+      >
         <p className="text-[#C9A84C] text-[0.7rem] font-bold uppercase tracking-widest mb-1.5">{item.tag}</p>
         <h3 className="text-[1.3rem] sm:text-[1.6rem] font-bold font-[family-name:var(--font-cormorant)] mb-1.5 text-[#2C1810] leading-tight group-hover:text-[#C9A84C] transition-colors">{item.name}</h3>
         <p className="text-[#7A6E65] text-xs sm:text-sm mb-4 sm:mb-6 min-h-[36px] leading-relaxed">{item.desc}</p>
@@ -69,9 +141,11 @@ function MenuCard({ item, inCart, onAdd }) {
           <span className="text-[1.5rem] sm:text-[1.8rem] font-bold font-[family-name:var(--font-cormorant)]">₹{item.price}</span>
           <div className="relative">
             {inCart && <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] rounded-full z-20 ring-2 ring-[#FDFAF5] bg-[#8A9E8A]" />}
-            <button onClick={()=>onAdd(item)}
+            <button
+              onClick={() => onAdd(item)}
               className="w-[42px] h-[42px] rounded-full bg-[#F7F2EA] flex items-center justify-center text-xl text-[#2C1810] shadow-sm group-hover:rotate-90 group-hover:bg-[#C9A84C] group-hover:text-white transition-all duration-300 border border-[#7A6E65]/10"
-              aria-label={`Add ${item.name}`}>+</button>
+              aria-label={`Add ${item.name}`}
+            >+</button>
           </div>
         </div>
       </div>
