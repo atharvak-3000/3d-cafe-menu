@@ -42,120 +42,113 @@ function SkeletonCard() {
   );
 }
 /* ─── Cloudinary URL helper ──────────────────────────────────────────────────
-   Injects e_background_removal + category colour so white bg is fully removed
-   even if the server-side transformation wasn't run at upload time.
-────────────────────────────────────────────────────────────────────────────── */
-const CAT_HEX = {
-  coffee: "E8D5A3",
-  tea:    "C8DCCA",
-  food:   "F0D5C5",
-  sweet:  "F0C8C8",
-};
-function getCloudinaryUrl(url, category) {
+   For cover-fill images: just resize & compress. No background removal needed.
+─────────────────────────────────────────────────────────────────── */
+function getCloudinaryUrl(url) {
   if (!url?.includes("cloudinary.com")) return url;
-  const hex = CAT_HEX[category] || "F7F2EA";
-  // Only inject if not already transformed
-  if (url.includes("/upload/e_background_removal")) return url;
-  return url.replace(
-    "/upload/",
-    `/upload/e_background_removal,b_rgb:${hex},c_pad,ar_1:1,w_500,q_auto,f_webp/`
-  );
+  // Already has a transform chain — return as-is
+  if (/\/upload\/[a-z]/.test(url)) return url;
+  return url.replace("/upload/", "/upload/w_600,h_400,c_fill,q_auto,f_auto/");
 }
 
 function MenuCard({ item, inCart, onAdd, isMostOrdered }) {
   const hasImg = !!(item.imageUrl?.trim());
   const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
-
-  const imgSrc = hasImg ? getCloudinaryUrl(item.imageUrl, item.category) : "";
+  const imgSrc = hasImg ? getCloudinaryUrl(item.imageUrl) : "";
 
   return (
-    /* IMPORTANT: no overflow-hidden on outer card — it breaks blend mode stacking context */
     <div
       className="group bg-[#FDFAF5] rounded-[2rem] shadow-sm hover:translate-y-[-10px] hover:scale-[1.025] hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#C9A84C]/50 relative"
       style={{ overflow: "hidden" }}
     >
-      {/* shimmer sweep */}
+      {/* shimmer sweep on card */}
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shimmer_1.5s_ease-in-out_infinite] pointer-events-none" />
 
-      {/* IMAGE AREA */}
+      {/* ─── IMAGE AREA ─── */}
       <div
-        className="relative z-10"
+        className="relative z-10 overflow-hidden"
         style={{
-          width: "100%",               /* CRITICAL: must be 100% or flex collapses it */
-          height: "clamp(140px,25vw,180px)",
-          backgroundColor: catBg,
-          backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.2) 0%, transparent 70%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-          isolation: "isolate",
-          overflow: "hidden",
+          width: "100%",
+          height: "clamp(160px,28vw,200px)",
+          backgroundColor: catBg,         /* fallback while loading */
           borderRadius: "22px 22px 0 0",
         }}
       >
         {hasImg ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={imgSrc}
-            alt={item.name}
-            className="menu-image"
-            style={{
-              width: "86%",
-              height: "86%",
-              objectFit: "contain",
-              mixBlendMode: "multiply",
-              WebkitMixBlendMode: "multiply",
-              display: "block",
-              position: "relative",
-              zIndex: 2,
-              flexShrink: 0,            /* prevent flex from shrinking the image */
-              filter: "drop-shadow(0 10px 24px rgba(44,24,16,0.15))",
-              transition: "transform 0.45s cubic-bezier(0.34,1.56,0.64,1), filter 0.3s ease",
-              backgroundColor: "transparent",
-              border: "none",
-              outline: "none",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "scale(1.12) translateY(-4px)";
-              e.currentTarget.style.filter    = "drop-shadow(0 18px 36px rgba(44,24,16,0.28))";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "";
-              e.currentTarget.style.filter    = "drop-shadow(0 10px 24px rgba(44,24,16,0.15))";
-            }}
-          />
+          <>
+            {/* Full-bleed cover photo */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imgSrc}
+              alt={item.name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center",
+                display: "block",
+                transform: "scale(1)",
+                transition: "transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.07)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+            />
+
+            {/* Bottom gradient scrim — blends photo into card body */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              height: 64,
+              background: "linear-gradient(to top, rgba(253,250,245,0.95), transparent)",
+              zIndex: 3, pointerEvents: "none",
+            }} />
+
+            {/* Subtle vignette on edges */}
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
+              boxShadow: "inset 0 0 40px rgba(44,24,16,0.08)",
+            }} />
+          </>
         ) : (
-          <span className="text-[4.5rem] sm:text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">{item.emoji}</span>
+          /* ── EMOJI FALLBACK ── unchanged */
+          <div style={{
+            width: "100%", height: "100%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.25) 0%, transparent 70%)",
+          }}>
+            <span className="text-[4.5rem] sm:text-[5rem] drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.25] group-hover:-rotate-6 inline-block">
+              {item.emoji}
+            </span>
+          </div>
         )}
 
+        {/* Chef's Pick badge */}
         {item.special && (
           <div style={{
             position: "absolute", top: 10, right: 10, zIndex: 10,
-            background: "#C4807A",
-            color: "white",
-            fontSize: "0.58rem", fontWeight: 600,
+            background: "rgba(196,128,122,0.92)", backdropFilter: "blur(4px)",
+            color: "white", fontSize: "0.58rem", fontWeight: 600,
             letterSpacing: "0.1em", textTransform: "uppercase",
-            padding: "3px 9px", borderRadius: 12,
-            pointerEvents: "none",
+            padding: "4px 10px", borderRadius: 20, pointerEvents: "none",
+            boxShadow: "0 2px 8px rgba(44,24,16,0.25)",
           }}>
             ✶ Chef&apos;s Pick
           </div>
         )}
 
-        {/* Most Ordered badge on matching grid card */}
+        {/* Most Ordered badge */}
         {isMostOrdered && (
-          <span style={{
-            position: "absolute", bottom: 0, left: 0,
-            background: "rgba(232,93,32,0.92)",
+          <div style={{
+            position: "absolute", top: 10, left: 10, zIndex: 10,
+            background: "rgba(232,93,32,0.9)", backdropFilter: "blur(4px)",
             color: "#fff", fontSize: "0.58rem", fontWeight: 700,
-            padding: "3px 10px", borderRadius: "0 8px 0 0", zIndex: 10,
-            letterSpacing: "0.05em",
-          }}>🔥 Most Ordered</span>
+            letterSpacing: "0.05em", padding: "4px 10px",
+            borderRadius: 20, pointerEvents: "none",
+            boxShadow: "0 2px 8px rgba(232,93,32,0.35)",
+          }}>🔥 Most Ordered</div>
         )}
       </div>
 
-      {/* CARD BODY */}
+      {/* ─── CARD BODY ─── unchanged */}
       <div
         className="p-4 sm:p-6 pb-6 sm:pb-8 relative z-10 bg-[#FDFAF5]"
         style={{ borderRadius: "0 0 22px 22px" }}
@@ -185,7 +178,7 @@ function MostOrderedCard({ item, inCart, onAdd }) {
   const [hovered, setHovered] = useState(false);
   const catBg  = CATEGORY_COLORS[item.category] || "#E8D5A3";
   const hasImg = !!(item.imageUrl?.trim());
-  const imgSrc = hasImg ? getCloudinaryUrl(item.imageUrl, item.category) : "";
+  const imgSrc = hasImg ? getCloudinaryUrl(item.imageUrl) : "";
 
   const handleAdd = () => {
     onAdd(item);
